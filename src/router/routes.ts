@@ -1,18 +1,18 @@
-import type { RouteRecordRaw } from 'vue-router';
+import { getCurrentUser } from '@middlewares/authenticare'
+import type { RouteRecordRaw } from 'vue-router'
+import dashboard from '@router/routes/dashboard'
+import errors from '@router/routes/errors'
+import auth from '@router/routes/auth'
 
 const routes: RouteRecordRaw[] = [
   {
     path: '/',
-    component: () => import('layouts/MainLayout.vue'),
-    children: [{ path: '', component: () => import('pages/IndexPage.vue') }],
+    redirect: '/dashboard',
+    beforeEnter: [getCurrentUser],
   },
+  auth(),
+  dashboard(),
+  errors(),
+]
 
-  // Always leave this as last one,
-  // but you can also remove it
-  {
-    path: '/:catchAll(.*)*',
-    component: () => import('pages/ErrorNotFound.vue'),
-  },
-];
-
-export default routes;
+export default routes
