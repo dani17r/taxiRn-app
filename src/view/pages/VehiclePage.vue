@@ -96,10 +96,11 @@ const vehicleOptions = [
 ]
 
 const form = ref({
+  user_id: '',
   license_plate: '',
   model: '',
   brand: '',
-  year: '',
+  year: 0,
   color: '',
   vehicle_type: 'car',
   is_active: false,
@@ -109,7 +110,10 @@ onMounted(async () => {
    if (store.auth.current?.user_id) {
     await store.vehicle.fetchVehicle(store.auth.current.user_id)
     if (vehicle.value) {
-      form.value = { ...vehicle.value }
+      form.value = { 
+        ...vehicle.value, 
+        vehicle_type: vehicle.value.vehicle_type || 'car',
+      }
     }
   }
 })
@@ -117,7 +121,10 @@ onMounted(async () => {
 const handleSubmit = async () => {
   if (!store.auth.current?.user_id) return
   try {
-    await store.vehicle.saveVehicle({...form.value, user_id: store.auth.current.user_id})
+    await store.vehicle.saveVehicle({
+      ...form.value, 
+      user_id: store.auth.current.user_id
+    })
   } catch (error) {
     console.error('Error saving vehicle:', error)
   }

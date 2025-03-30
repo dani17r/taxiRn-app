@@ -13,9 +13,9 @@ export const isLogin = async (to: ToRouterT, _from: FromRouterT, next: NextRoute
       else next({ name: 'login' })
     } else {
       if (user) {
-        if (user.role == UserRoleI.USER) next({ name: 'map' })
-        if (user.role == UserRoleI.ADMIN) next({ name: 'panel' })
-        if (user.role == UserRoleI.DRIVER) next({ name: 'my-vehicle' })
+        if (user.role == String(UserRoleI.USER)) next({ name: 'map' })
+        if (user.role == String(UserRoleI.ADMIN)) next({ name: 'panel' })
+        if (user.role == String(UserRoleI.DRIVER)) next({ name: 'my-vehicle' })
       } else next()
     }
   }, true)

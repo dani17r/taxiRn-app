@@ -1,15 +1,14 @@
 export interface VehicleI {
   id: string
   user_id: string
+  is_active: boolean
+  vehicle_type?: 'car' | 'motorcycle'
   license_plate: string
   model: string
   brand: string
-  year: string
+  year: number
   color: string
-  vehicle_type: 'car' | 'motorcycle'
-  created_at: string
-  updated_at: string
-  is_active: boolean
+  created_at: Date
 }
 
 export interface StateI {
@@ -28,17 +27,19 @@ export interface InputsI {
     license_plate: string
     model: string
     brand: string
-    year: string
+    year: number
     color: string
     vehicle_type: string
+    is_active?: boolean
   }
   UpdateI: Partial<{
     user_id: string
     license_plate: string
     model: string
     brand: string
-    year: string
+    year: number
     color: string
     vehicle_type: string
+    is_active: boolean
   }>
 }

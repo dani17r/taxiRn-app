@@ -2,9 +2,18 @@ import type { NotifyI } from '@interfaces/notify'
 import { Notify } from 'quasar'
 
 export default () => ({
-  error: (error: NotifyI['ErrorI']) =>
+  // Renamed from 'error' to 'errorCatch'
+  errorCatch: (error: NotifyI['ErrorI']) =>
     Notify.create({
       message: error.message,
+      position: 'top-right',
+      type: 'negative',
+    }),
+
+  // New error function accepting a message string
+  error: (message: string) =>
+    Notify.create({
+      message: message,
       position: 'top-right',
       type: 'negative',
     }),

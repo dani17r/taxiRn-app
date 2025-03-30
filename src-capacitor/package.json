@@ -1,8 +1,8 @@
 {
-  "name": "taxirn-app",
-  "version": "0.0.1",
-  "description": "App mobile de taxi y envios.",
-  "author": "daniel.rangel <daniel.rangel@linktic.com>",
+  "name": "TaxiRn-app",
+  "version": "1.4.0",
+  "description": "App de contratos para carreritas, viajes, deliverys, encargos, etc.",
+  "author": "neribel",
   "private": true,
   "dependencies": {
     "@capacitor/android": "^6.0.0",

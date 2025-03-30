@@ -3,7 +3,7 @@
 import type { Pinia } from 'pinia' // Importa Pinia si lo necesitas
 import type { Quasar } from 'quasar'
 import type { I18nT } from 'vue-i18n'
-import type { Router } from 'vue-router'
+import type { Router, Route } from 'vue-router'
 
 declare module '@vue/runtime-core' {
   interface ComponentCustomProperties {
@@ -12,6 +12,7 @@ declare module '@vue/runtime-core' {
     //   bg: ComputedRef<string>
     // };
     $router: Router
+    $route: Route
     $pinia: Pinia
     $q: Quasar
     $t: I18nT

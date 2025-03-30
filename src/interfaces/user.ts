@@ -1,19 +1,3 @@
-export interface UserAuthI {
-  instance_id?: string
-  id: string
-  aud?: string
-  role?: string
-  email: string
-  email_confirmed_at?: Date
-  recovery_token?: string
-  recovery_sent_at?: Date
-  created_at?: Date
-  updated_at?: Date
-  phone?: string
-  confirmed_at?: Date
-  deleted_at?: Date
-}
-
 export enum UserRoleI {
   ADMIN = 'admin',
   USER = 'user',
@@ -26,26 +10,49 @@ export interface UserImagesI {
   ground?: string | null
 }
 
-export interface UserPreferencesI {
-  modeDark?: boolean
-  fontSize?: number
-}
-export interface UserConfigI {
-  types_modals: string[]
-  types_notifications: string[]
-}
-
 export interface UserI {
   id: string
   user_id: string
-  role: UserRoleI
-  cedula: string
+  role: string
   email: string
   fullname: string
-  description?: string | null
-  images?: UserImagesI | null
-  config?: UserConfigI | null
-  preferences?: UserPreferencesI | null
-  created_at?: Date | null
-  updated_at?: Date | null
+  cedula?: string
+  is_blocked?: boolean
+  description?: string
+  images?: UserImagesI
+  created_at: Date
+  updated_at: Date
 }
+
+export interface StateI {
+  lifecycles: {
+    onMounted: boolean
+  }
+  current: UserI | null
+  data: UserI[] | null
+}
+
+export interface InputsI {
+  RegisterI: {
+    email: string
+    password: string
+    fullname: string
+    cedula?: string
+    role?: string
+  }
+  LoginI: {
+    email: string
+    password: string
+  }
+  UpdateI: Partial<{
+    email: string
+    password: string
+    role: UserRoleI
+    cedula: string
+    fullname: string
+    description?: string | null
+    images?: UserImagesI | null
+  }>
+}
+
+export type ActionT = (data: UserI | null) => void

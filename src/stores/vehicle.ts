@@ -2,6 +2,9 @@ import { defineStore } from 'pinia'
 import supabase from '@services/supabase.services'
 import type { StateI, InputsI } from '@interfaces/vehicle'
 import { useQuasar } from 'quasar'
+import notification from '@utils/notification'
+
+const notify = notification()
 
 export const useVehicleStore = defineStore('vehicleStore', {
   state: (): StateI => ({
@@ -35,7 +38,7 @@ export const useVehicleStore = defineStore('vehicleStore', {
       }
     },
 
-    async saveVehicle(payload: InputsI['UpdateI']) {
+    async saveVehicle(payload: InputsI['RegisterI']) {
       const $q = useQuasar()
       this.loading = true
       try {
@@ -72,7 +75,7 @@ export const useVehicleStore = defineStore('vehicleStore', {
         return result
       } catch (error) {
         this.error = error instanceof Error ? error.message : 'Error saving vehicle'
-        $q.notify({ type: 'negative', message: this.error })
+        $q?.notify({ type: 'negative', message: this.error })
         throw error
       } finally {
         this.loading = false
@@ -94,7 +97,7 @@ export const useVehicleStore = defineStore('vehicleStore', {
 
         if (error) throw error
 
-        $q.notify({ type: 'positive', message: 'Vehículo actualizado' })
+        notify.success({ message: 'Vehículo actualizado' })
         this.current = data
         return data
       } catch (error) {

@@ -25,7 +25,7 @@
           <q-input
             :type="showPassword ? 'text' : 'password'"
             v-model="password"
-            placeholder="Contraseña"
+            label="Contraseña"
             class="w-full"
           >
             <template #append>
@@ -39,31 +39,24 @@
           </q-input>
         </div>
 
-        <div class="relative">
-          <q-select
-            v-model="selectRole.role"
-            :options="selectRole.roles"
-            label="soy un"
-            class="w-full"
-            map-options
-            emit-value
-          >
-            <template v-slot:prepend>
-              <q-icon name="person" />
+         <div class="relative">
+          <q-input v-model="cedula" label="Cedula" class="w-full">
+            <template #append>
+              <q-icon name="tag" color="yellow-8" />
             </template>
-          </q-select>
+          </q-input>
         </div>
 
-        <div>
+        <div class="mt-12">
           <q-btn
-            type="submit"
             icon="person_add"
             color="yellow-9"
-            no-caps
             class="!w-full"
-            unelevated
-            size="18px"
             label="Aceptar"
+            type="submit"
+            size="18px"
+            unelevated
+            no-caps
           />
           <q-btn
             type="reset"
@@ -93,9 +86,9 @@
 </template>
 
 <script setup lang="ts">
-import { reactive, ref, watchEffect } from 'vue'
 import superComposable from '@composables/super'
 import notification from '@utils/notification'
+import { ref } from 'vue'
 
 const { store, router:useRouter } = superComposable()
 const router = useRouter();
@@ -103,14 +96,8 @@ const router = useRouter();
 const email = ref('')
 const password = ref('')
 const fullname = ref('')
+const cedula = ref('')
 const showPassword = ref(false)
-const selectRole = reactive({
-  role: 'user',
-  roles: [
-    { label: 'Conductor', value: 'driver' },
-    { label: 'Usuario', value: 'user' },
-  ],
-})
 
 const handleSubmit = async () => {
   await store.auth
@@ -118,7 +105,7 @@ const handleSubmit = async () => {
       email: email.value,
       password: password.value,
       fullname: fullname.value,
-      role: selectRole.role,
+      cedula: cedula.value
     })
     .then(async () => {
       notification().success({ message: 'Usuario registrado' })
@@ -129,10 +116,6 @@ const handleSubmit = async () => {
       notification().error(error.message)
     })
 }
-
-watchEffect(()=>{
-  console.log(selectRole.role);
-})
 
 const onReset = () => {
   email.value = ''

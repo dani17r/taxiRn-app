@@ -1,8 +1,10 @@
 <template>
   <q-item
     clickable
-    exact-active-class="text-primary"
+    exact-active-class="text-yellow-9"
+    @click="changeRoute"
     :to="props.link"
+    exact
   >
     <q-item-section
       v-if="icon"
@@ -19,6 +21,12 @@
 </template>
 
 <script setup lang="ts">
+import useTabsComposable from '@composables/tabs'
+import { useRouter } from 'vue-router';
+
+const { emptyTabs } = useTabsComposable()
+const router = useRouter();
+
 export interface routerLink {
   title: string;
   caption?: string;
@@ -31,4 +39,11 @@ const props = withDefaults(defineProps<routerLink>(), {
   icon: '',
   title: '',
 });
+
+
+const changeRoute = async (e: Event) => {
+  e.preventDefault();
+  emptyTabs(props.link.name)
+  await router.replace(props.link);
+};
 </script>

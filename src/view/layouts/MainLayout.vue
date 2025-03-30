@@ -13,6 +13,7 @@
         </q-toolbar-title>
 
         <div>
+          <ButtonDarkMode />
           <q-btn
             flat
             dense
@@ -42,40 +43,39 @@
           narrow-indicator
           dense
         >
-          <q-tab
-            v-for="tab in tabs.values"
-            :label="tab.label"
-            :icon="tab.icon"
-            :name="tab.name"
-            :key="tab.name"
-            @click="$router.push({ name: tab.name })"
-            no-caps
-            ripple
-          >
-            <!-- <q-badge color="red" floating>2</q-badge> -->
-          </q-tab>
+          <template v-for="tab in tabs.values" :key="tab.name">
+            <q-tab
+              @click="$router.push({ name: tab.name })"
+              v-show="isRoleActive(tab.views)"
+              :label="tab.label"
+              :icon="tab.icon"
+              :name="tab.name"
+              no-caps
+              ripple
+            >
+              <!-- <q-badge color="red" floating>2</q-badge> -->
+            </q-tab>
+          </template>
         </q-tabs>
       </q-toolbar>
     </q-footer>
 
     <q-page-container>
+      <!-- @transition="$router.push({ name: tabs.select })" -->
       <q-tab-panels
-        v-model="tabs.select"
         :swipeable="tabs.select != 'map'"
+        :model-value="tabs.select"
+        class="bg-one"
         animated
-        @transition="$router.push({ name: tabs.select })"
       >
-      <template v-for="tabItem in tabs.values">
-
         <q-tab-panel
-        v-if="isRoleActive(tabItem.roles)"
-        :key="tabItem.name"
-        :name="tabItem.name"
-        :class="tabs.select === 'map' ? '!p-0' : ''"
+          v-for="tabItem in tabs.values"
+          :class="tabs.select == 'map' ? '!p-0' : ''"
+          :name="tabItem.name"
+          :key="tabItem.name"
         >
-          <router-view :key="tabItem.name" />
+          <router-view />
         </q-tab-panel>
-      </template>
       </q-tab-panels>
     </q-page-container>
   </q-layout>
@@ -85,9 +85,12 @@
 import useDrawerMainComposable from '@composables/DrawerMain'
 import { defineAsyncComponent, onMounted } from 'vue'
 import useSuperComposable from '@composables/super'
+import useRolesComposable from '@composables/role'
 import useTabsComposable from '@composables/tabs'
-import useRoleComposable from '@composables/role'
 
+const ButtonDarkMode = defineAsyncComponent(
+  () => import('@components/ButtonDarkMode.vue'),
+)
 const DrawerViewDriver = defineAsyncComponent(
   () => import('@components/drawers/DrawerViewDriver.vue'),
 )
@@ -97,15 +100,14 @@ const DrawerViewAdmin = defineAsyncComponent(
 const DrawerViewUser = defineAsyncComponent(() => import('@components/drawers/DrawerViewUser.vue'))
 
 const { toggleLeftDrawer, leftDrawerOpen } = useDrawerMainComposable()
-const { initTabsForRole, isRoleActive } = useRoleComposable()
+const { tabs, initTabs, initTabsForRole } = useTabsComposable()
 const { store, route } = useSuperComposable()
-const { tabs, initTabs } = useTabsComposable()
+const { isRoleActive } = useRolesComposable()
 
-onMounted(()=>{
+onMounted(() => {
   initTabs(route())
-  initTabsForRole()
+  initTabsForRole(store)
 })
-
 </script>
 
 <style scoped lang="css">

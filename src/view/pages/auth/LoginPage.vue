@@ -18,7 +18,7 @@
           <q-input
             :type="showPassword ? 'text' : 'password'"
             v-model="password"
-            placeholder="Contraseña"
+            label="Contraseña"
             class="w-full"
           >
             <template #append>
@@ -32,23 +32,25 @@
           </q-input>
         </div>
 
-        <div class="relative">
-          <q-select
-            v-model="selectRole.role"
-            :options="selectRole.roles"
-            label="soy un"
-            class="w-full"
-            map-options
-            emit-value
-          >
-            <template v-slot:prepend>
-              <q-icon name="person" />
-            </template>
-          </q-select>
-        </div>
+        <q-btn
+          type="submit"
+          icon="login"
+          color="yellow-9"
+          no-caps
+          class="!mt-6 !w-full"
+          unelevated
+          size="18px"
+          label="Aceptar"
+        />
 
-        <!-- Submit Button -->
-        <q-btn type="submit" icon="login" color="yellow-9" no-caps class="q-mt-md !w-full" unelevated size="18px" label="Aceptar" />
+        <div class="!mt-8">
+          <router-link
+             :to="{ name: 'forgot-password'}"
+             class="text-yellow-9 hover:text-yellow-9-dark"
+           >
+             Olvide mi contraseña
+           </router-link>
+        </div>
       </q-form>
     </div>
     <q-btn
@@ -65,15 +67,16 @@
 </template>
 
 <script lang="ts" setup>
-import useRoleComposable from '@composables/role'
+import useTabsComposable from '@composables/tabs'
 import superComposable from '@composables/super'
 import notification from '@utils/notification'
-import { reactive, ref } from 'vue'
+import { ref } from 'vue'
 
-const { store, router: useRouter } = superComposable()
+const { store, router: useRouter, $q } = superComposable()
+const { loading } = $q()
 
-const router = useRouter();
-const { initTabsForRole } = useRoleComposable()
+const router = useRouter()
+const useTabs = useTabsComposable()
 
 defineOptions({
   name: 'LoginPage',
@@ -82,37 +85,33 @@ defineOptions({
 const email = ref('')
 const password = ref('')
 const showPassword = ref(false)
-const selectRole = reactive({
-  role: 'user',
-  roles: [
-    { label: 'Admin', value: 'admin' },
-    { label: 'Conductor', value: 'driver' },
-    { label: 'Usuario', value: 'user' },
-  ],
-})
 
 /**
  * Función que se ejecuta al enviar el formulario de inicio de sesión.
  * Debe contener la lógica de autenticación.
  */
 const handleSubmit = async () => {
+  loading.show()
   await store.auth
     .signIn({
       email: email.value,
       password: password.value,
     })
     .then(async () => {
-      await router.push({ name: 'map' })
+      if (store.auth?.getRoleAdmin)  await router.push({ name: 'panel' })
+      if (store.auth?.getRoleDriver) await router.push({ name: 'my-vehicle' })
+      if (store.auth?.getRoleUser) await router.push({ name: 'map' })
+      useTabs.reset()
+      useTabs.initTabsForRole(store)
     })
-    .finally(()=> initTabsForRole())
-    .catch((error) => {
-      notification().error(error.message)
+    .finally(() => {
+      loading.hide()
     })
+    .catch((error) => notification().error(error))
 }
 
 const onReset = () => {
   email.value = ''
   password.value = ''
-  selectRole.role = 'user'
 }
 </script>

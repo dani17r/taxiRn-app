@@ -1,4 +1,4 @@
-import type { StateI, InputsI, ActionT } from '@interfaces/auth'
+import type { StateI, InputsI, ActionT } from '@interfaces/user'
 
 import { UserRoleI, type UserI } from '@interfaces/user'
 import supabase from '@services/supabase.services'
@@ -18,21 +18,18 @@ export const useAuthStore = defineStore('authStore', {
     },
   getters: {
     isAuth: (state) => state.current !== null,
-    getRoleUser: (state) => state.current?.role === UserRoleI.USER,
-    getRoleAdmin: (state) => state.current?.role === UserRoleI.ADMIN,
-    getRoleDriver: (state) => state.current?.role === UserRoleI.DRIVER,
-    getRole: (state) => state.current!.role,
+    getRoleUser: (state) => String(state.current?.role || '') == String(UserRoleI.USER),
+    getRoleAdmin: (state) => String(state.current?.role || '') == String(UserRoleI.ADMIN),
+    getRoleDriver: (state) => String(state.current?.role || '') == String(UserRoleI.DRIVER),
+    getRole: (state) => state.current!.role || '',
   },
   actions: {
     // Register
-    async signUp(user: InputsI['RegisterI'], action?: ActionT) {
+    async newUser(user: InputsI['RegisterI'], action?: ActionT) {
       await supabase.auth
-        .signUp({
-          email: user.email,
-          password: user.password,
-        })
+        .signUp({ email: user.email, password: user.password })
         .then(async ({ data: dataAuth, error }) => {
-          if (error) return notify.error(error)
+          if (error) return notify.errorCatch(error) // Use errorCatch
           if (dataAuth) {
             await supabase
               .from('users')
@@ -41,12 +38,40 @@ export const useAuthStore = defineStore('authStore', {
                   fullname: user.fullname,
                   user_id: dataAuth.user?.id,
                   email: user.email,
-                  role: user.role,
+                  cedula: user.cedula,
+                  role: user.role || 'user',
                 },
               ])
               .select()
               .then(({ data: dataUser, error }) => {
-                if (error) return notify.error(error)
+                if (error) return notify.errorCatch(error) // Use errorCatch
+                if (action) action(dataUser[0] as UserI)
+              })
+          }
+        })
+    },
+
+    async signUp(user: InputsI['RegisterI'], action?: ActionT) {
+      await supabase.auth
+        .signUp({
+          email: user.email,
+          password: user.password,
+        })
+        .then(async ({ data: dataAuth, error }) => {
+          if (error) return notify.errorCatch(error) // Use errorCatch
+          if (dataAuth) {
+            await supabase
+              .from('users')
+              .insert([
+                {
+                  fullname: user.fullname,
+                  user_id: dataAuth.user?.id,
+                  email: user.email,
+                },
+              ])
+              .select()
+              .then(({ data: dataUser, error }) => {
+                if (error) return notify.errorCatch(error) // Use errorCatch
                 if (action) action(dataUser as unknown as UserI)
               })
           }
@@ -56,14 +81,15 @@ export const useAuthStore = defineStore('authStore', {
     //Login
     async signIn(user: InputsI['LoginI'], action?: ActionT) {
       await supabase.auth.signInWithPassword(user).then(async ({ data: dataAuth, error }) => {
-        if (error) return notify.error(error)
+        if (error) return notify.errorCatch(error) // Use errorCatch
         if (dataAuth) {
           await supabase
             .from('users')
             .select()
             .eq('user_id', dataAuth.user?.id)
             .then(({ data: dataUser, error }) => {
-              if (error) return notify.error(error)
+              if (error) return notify.errorCatch(error) // Use errorCatch
+              this.current = dataUser[0]
               if (action) action(dataUser[0] as unknown as UserI)
             })
         }
@@ -73,7 +99,7 @@ export const useAuthStore = defineStore('authStore', {
     // Logout
     async signOut(action?: ActionT) {
       await supabase.auth.signOut().then(({ error }) => {
-        if (error) return notify.error(error)
+        if (error) return notify.errorCatch(error) // Use errorCatch
         if (action) action(null)
       })
     },
@@ -93,7 +119,7 @@ export const useAuthStore = defineStore('authStore', {
               .select()
               .eq('user_id', dataAuth.user?.id)
               .then(({ data: dataUser, error }) => {
-                if (error) return notify.error(error)
+                if (error) return notify.errorCatch(error) // Use errorCatch
                 if (action) action(dataUser[0] as unknown as UserI)
                 this.current = dataUser[0] as unknown as UserI
               })
@@ -105,7 +131,7 @@ export const useAuthStore = defineStore('authStore', {
     //update user
     async updateUser(user: InputsI['UpdateI'], action?: ActionT) {
       await supabase.auth.updateUser(user).then(({ data, error }) => {
-        if (error) return notify.error(error)
+        if (error) return notify.errorCatch(error) // Use errorCatch
         if (action) action(data as unknown as UserI)
         setTimeout(() => (this.current = data.user as unknown as UserI), 200)
       })
@@ -113,7 +139,7 @@ export const useAuthStore = defineStore('authStore', {
 
     async resetPassword(email: string, action?: ActionT) {
       await supabase.auth.resetPasswordForEmail(email).then(({ error }) => {
-        if (error) return notify.error(error)
+        if (error) return notify.errorCatch(error) // Use errorCatch
         if (action) action(null)
       })
     },
