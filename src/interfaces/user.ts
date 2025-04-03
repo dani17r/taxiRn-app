@@ -1,3 +1,5 @@
+import type { VehicleI } from './vehicle'
+
 export enum UserRoleI {
   ADMIN = 'admin',
   USER = 'user',
@@ -19,10 +21,14 @@ export interface UserI {
   cedula?: string
   is_blocked?: boolean
   description?: string
+  phone: string
+  birthdate: string
   images?: UserImagesI
   created_at: Date
   updated_at: Date
 }
+
+export type DriverT = UserI & { vehicles: VehicleI[] }
 
 export interface StateI {
   lifecycles: {
@@ -44,15 +50,13 @@ export interface InputsI {
     email: string
     password: string
   }
-  UpdateI: Partial<{
+  UpdateI: Pick<UserI, 'fullname' | 'description' | 'images'> & {
     email: string
-    password: string
-    role: UserRoleI
-    cedula: string
-    fullname: string
-    description?: string | null
-    images?: UserImagesI | null
-  }>
+    cedula?: string
+    role: string
+    phone: string
+    birthdate: string
+  }
 }
 
 export type ActionT = (data: UserI | null) => void

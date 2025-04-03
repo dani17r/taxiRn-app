@@ -7,7 +7,7 @@ import auth from '@router/routes/auth'
 const routes: RouteRecordRaw[] = [
   {
     path: '/',
-    redirect: '/dashboard',
+    redirect: { name: 'login' },
     beforeEnter: [getCurrentUser],
   },
   auth(),

@@ -113,7 +113,7 @@
       color="yellow-9"
       icon="person_add"
       class="fixed bottom-15 right-5"
-      @click="dialogs.newAdmin.toggle()"
+      @click="newAdmin()"
     />
 
     <DialogNewAdmin
@@ -258,6 +258,11 @@ const dialogs = reactive({
 
 const editAdmin = (admin: UserI) => {
   editingAdmin.value = admin;
+  dialogs.newAdmin.toggle();
+}
+
+const newAdmin = () => {
+  editingAdmin.value = null;
   dialogs.newAdmin.toggle();
 }
 

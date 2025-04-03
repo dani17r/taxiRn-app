@@ -1,4 +1,5 @@
 import type { ToRouterT, FromRouterT, NextRouterT } from '@interfaces/global'
+import { removeLoading } from '@utils/initHtml'
 import { UserRoleI } from '@interfaces/user'
 import { useAuthStore } from '@stores/auth'
 
@@ -8,6 +9,8 @@ export const isLogin = async (to: ToRouterT, _from: FromRouterT, next: NextRoute
   const authStore = useAuthStore()
 
   await authStore.getUser((user) => {
+    removeLoading()
+
     if (isVerifyAuth) {
       if (user) next()
       else next({ name: 'login' })
@@ -24,5 +27,7 @@ export const isLogin = async (to: ToRouterT, _from: FromRouterT, next: NextRoute
 export const getCurrentUser = async (to: ToRouterT, _from: FromRouterT, next: NextRouterT) => {
   const authStore = useAuthStore()
   await authStore.getUser()
+
+  removeLoading()
   next()
 }

@@ -105,7 +105,8 @@ const handleSubmit = async () => {
       email: email.value,
       password: password.value,
       fullname: fullname.value,
-      cedula: cedula.value
+      cedula: cedula.value,
+      role: 'user'
     })
     .then(async () => {
       notification().success({ message: 'Usuario registrado' })

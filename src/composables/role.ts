@@ -1,9 +1,10 @@
 import { UserRoleI } from '@interfaces/user'
 
 import useSuperComposable from '@composables/super'
-const { store } = useSuperComposable()
 
 export default () => {
+  const { store } = useSuperComposable()
+
   const isRoleActive = (views: string[]) => {
     if (views.includes(UserRoleI.ALL)) return true
     return views.some((role) => role?.toLowerCase() === store.auth.getRole?.toLowerCase())

@@ -26,7 +26,7 @@
           :loading="loading"
           @click="saveEmail"
         >
-          Enviar código
+          Aceptar
         </q-btn>
 
         <div class="text-center text-sm mt-10">
@@ -75,8 +75,8 @@ const emailRules = [
 const handleForgotPassword = async () => {
   loading.value = true;
   try {
-    const { error } = await supabase.functions.invoke('my-function', {
-      body: { name: 'Functions', email: email.value }
+    const { error } = await supabase.auth.resetPasswordForEmail(email.value, {
+      redirectTo: 'taxirnapp://reset-password',
     });
 
     if (error) throw error;

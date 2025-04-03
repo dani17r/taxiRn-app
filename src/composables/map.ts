@@ -1,5 +1,6 @@
 import { baseLayers } from '@services/map.services'
 import locationComposable from '@composables/location'
+import superComposable from '@composables/super'
 import routeComposable from '@composables/route'
 import * as template from '@utils/mapTemplates'
 import { computed } from 'vue'
@@ -14,18 +15,11 @@ const STORAGE_KEY = 'mapState'
 const startIcon = template.createIcon('green')
 const endIcon = template.createIcon('red')
 
-const routeComposableInstance = routeComposable()
-const locationComposableInstance = locationComposable
-
-const { startPos, endPos, currentRoute, updateRoute, resetRouteState } = routeComposableInstance
-const { currentLocation } = locationComposableInstance
-
 export default () => {
-  const reloadMapState = () => {
-    loadStateFromLocalStorage()
-    centerToSavedPosition()
-    map.invalidateSize()
-  }
+  const routeInstance = routeComposable() // Get the instance
+  const { startPos, endPos, currentRoute, updateRoute } = routeInstance // Destructure others
+  const { currentLocation, locations } = locationComposable
+  const { store } = superComposable()
 
   const saveStateToLocalStorage = () => {
     const state = {
@@ -42,6 +36,7 @@ export default () => {
           }
         : null,
       currentLocation: currentLocation.value,
+      // Store the whole currentRoute, which includes the path if available
       currentRoute: currentRoute.value,
     }
     localStorage.setItem(STORAGE_KEY, JSON.stringify(state))
@@ -57,6 +52,7 @@ export default () => {
       currentLocation.value = state.currentLocation
       currentRoute.value = state.currentRoute
 
+      // Adjust map view
       if (map && (startPos.value || endPos.value)) {
         if (startPos.value && endPos.value) {
           const bounds = L.latLngBounds([startPos.value, endPos.value]).pad(0.2)
@@ -104,16 +100,38 @@ export default () => {
     }
 
     newMarker.addTo(map)
-    await updateRoute(map)
-
-    // Save the map state to local storage
+    await updateRoute()
     saveStateToLocalStorage()
+
+    const currentCoords = [pos.lng, pos.lat]
+    const existing = locations.value.find(
+      (l) =>
+        !l.id?.startsWith('temp-') && // Important: Check only saved locations
+        l.coordinates?.coordinates &&
+        l.coordinates.coordinates.length >= 2 &&
+        l.coordinates.coordinates[0] === currentCoords[0] &&
+        l.coordinates.coordinates[1] === currentCoords[1],
+    )
+
+    if (existing) {
+      currentLocation.value = existing // Use the existing DB record
+    } else {
+      // Create a temporary representation for this new location
+      currentLocation.value = {
+        id: String(store.auth.current?.id),
+        user_id: String(store.auth.current?.user_id),
+        name: 'Current Location', // Placeholder
+        description: '',
+        coordinates: { type: 'Point', coordinates: currentCoords },
+        created_at: new Date(),
+      }
+    }
 
     map.closePopup()
   }
 
-  const initMap = () => {
-    map = L.map('map')
+  const initMap = (name = 'map') => {
+    map = L.map(name)
     map.setView([10.196805, -71.30903], 14)
     map.addLayer(baseLayers.GoogleMaps)
     switchLayer(baseLayers.GoogleMaps)
@@ -123,17 +141,16 @@ export default () => {
     loadStateFromLocalStorage()
 
     if (startPos.value) {
-      setPoint('start', startPos.value.lat, startPos.value.lng).catch(() => {})
+      void setPoint('start', startPos.value.lat, startPos.value.lng)
       if (currentLocation.value) {
         startMarker?.bindPopup(template.createMarkerPopup('start'))
       }
     }
 
     if (endPos.value) {
-      setPoint('end', endPos.value.lat, endPos.value.lng).catch(() => {})
+      void setPoint('end', endPos.value.lat, endPos.value.lng)
     }
 
-    // Initialize vueActions for global access
     window.vueActions = {
       // eslint-disable-next-line @typescript-eslint/no-misused-promises
       setPoint,
@@ -148,8 +165,9 @@ export default () => {
           endMarker = null
           endPos.value = null
         }
-        resetRouteState(map) // Reset route state (clears currentRoute)
-        void updateRoute(map) // Update the route display (should remove it if no points)
+        routeInstance.resetRouteState() // Call from instance
+        void updateRoute() // No argument needed
+        routeInstance.currentRoute.value = null // 👈 Añadir esta línea
         saveStateToLocalStorage() // Save state after deletion
       },
     }
@@ -165,7 +183,7 @@ export default () => {
       endMarker = null
     }
 
-    resetRouteState(map)
+    routeInstance.resetRouteState() // Call from instance
 
     startPos.value = null
     endPos.value = null
@@ -193,6 +211,12 @@ export default () => {
         map.setView([10.196805, -71.30903], 14)
       }
     }
+  }
+
+  const reloadMapState = () => {
+    loadStateFromLocalStorage()
+    centerToSavedPosition()
+    map.invalidateSize()
   }
 
   return {

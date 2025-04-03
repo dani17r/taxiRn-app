@@ -8,5 +8,5 @@ export interface RouteI {
   start_point: Point
   end_point: Point
   path?: LineString
-  created_at: Date
+  created_at: string | number | Date
 }

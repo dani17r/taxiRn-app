@@ -9,21 +9,6 @@
 
       <q-form @submit.prevent="handleResetPassword" class="space-y-6">
         <q-input
-          v-model="email"
-          label="Correo electrónico"
-          type="email"
-          :rules="emailRules"
-          required
-        />
-        
-        <q-input
-          v-model="code"
-          label="Código de verificación"
-          :rules="codeRules"
-          required
-        />
-        
-        <q-input
           v-model="newPassword"
           label="Nueva contraseña"
           type="password"
@@ -48,21 +33,16 @@
 import { onMounted, ref } from 'vue';
 import { useQuasar } from 'quasar';
 import { supabase } from '@services/supabase.services';
-import { useRouter } from 'vue-router';
+import { useRouter, useRoute } from 'vue-router';
 
 const $q = useQuasar();
 const router = useRouter();
+const route = useRoute();
 
 const email = ref('');
-const code = ref('');
 const newPassword = ref('');
 const loading = ref(false);
 
-const emailRules = [
-  (val: string) => !!val || 'El correo electrónico es requerido',
-  (val: string) => /^\w+([.-]?\w+)*@\w+([.-]?\w+)*(\.\w{2,3})+$/.test(val) || 'Correo electrónico inválido'
-];
-const codeRules = [(v: string) => !!v || 'Código requerido'];
 const passwordRules = [
   (v: string) => !!v || 'Contraseña requerida',
   (v: string) => v.length >= 6 || 'Mínimo 6 caracteres'
@@ -71,22 +51,29 @@ const passwordRules = [
 const handleResetPassword = async () => {
   loading.value = true;
   try {
-    const { error } = await supabase.functions.invoke('reset-password', {
-      body: {
-        email: email.value,
-        code: code.value,
-        new_password: newPassword.value
-      }
-    });
 
-    if (error) throw error;
+    if (!route.params.token) throw new Error('Invalid token');
     
-    $q.notify({
-      type: 'positive',
-      message: 'Contraseña actualizada exitosamente!'
-    });
-    
-    await router.push('/login');
+    await supabase.auth.verifyOtp({
+      type: 'recovery',
+      token: route.params.token as string,
+      email: email.value,
+    }).then(async ()=>{
+
+      await supabase.auth.updateUser({
+        password: newPassword.value,
+        email: email.value
+      }).then(async ()=>{
+        
+        $q.notify({
+          type: 'positive',
+          message: 'Contraseña actualizada exitosamente!'
+        });
+         
+        await router.push('/login');
+      })
+    })
+
   } catch (error) {
     $q.notify({
       type: 'negative',

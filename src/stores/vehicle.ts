@@ -39,7 +39,6 @@ export const useVehicleStore = defineStore('vehicleStore', {
     },
 
     async saveVehicle(payload: InputsI['RegisterI']) {
-      const $q = useQuasar()
       this.loading = true
       try {
         let result
@@ -69,13 +68,10 @@ export const useVehicleStore = defineStore('vehicleStore', {
           if (error) throw error
           result = data
         }
-
-        $q.notify({ type: 'positive', message: 'Vehículo guardado' })
         this.current = result
         return result
       } catch (error) {
         this.error = error instanceof Error ? error.message : 'Error saving vehicle'
-        $q?.notify({ type: 'negative', message: this.error })
         throw error
       } finally {
         this.loading = false

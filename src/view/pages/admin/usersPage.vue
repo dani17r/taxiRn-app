@@ -111,7 +111,7 @@
       color="yellow-9"
       icon="person_add"
       class="fixed bottom-15 right-5"
-      @click="dialogs.newuser.toggle()"
+      @click="newUser()"
     />
 
     <DialogNewUser
@@ -253,6 +253,11 @@ const dialogs = reactive({
 
 const editUser = (user: UserI) => {
   editingUser.value = user;
+  dialogs.newuser.toggle();
+}
+
+const newUser = () => {
+  editingUser.value = null;
   dialogs.newuser.toggle();
 }
 

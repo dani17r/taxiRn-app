@@ -3,10 +3,10 @@ import { useRouter, useRoute } from 'vue-router'
 import { useAuthStore } from '@stores/auth'
 import { useQuasar } from 'quasar'
 
-const auth = useAuthStore()
-const vehicle = useVehicleStore()
-
 export default () => {
+  const auth = useAuthStore()
+  const vehicle = useVehicleStore()
+
   const reset = () => {
     auth.reset()
     vehicle.reset()

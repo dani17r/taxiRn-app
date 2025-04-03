@@ -32,6 +32,11 @@
                     />
                   </p>
                 </div>
+                <div class="text-lg text-grey-6">
+                  <p class="flex items-center gap-2">
+                    <span class="text-weight-bold">Banco De Venezuela</span>
+                  </p>
+                </div>
                 <div>
                   <p class="text-grey-6 mb-1 text-lg">Número de cuenta:</p>
                   <div class="flex items-center gap-2">

@@ -33,13 +33,7 @@
 
         <q-card-actions align="right">
           <q-btn flat label="Cancelar" v-close-popup />
-          <q-btn
-            flat
-            label="Aceptar"
-            color="yellow-9"
-            @click="confirmResetAction"
-            v-close-popup
-          />
+          <q-btn flat label="Aceptar" color="yellow-9" @click="confirmResetAction" v-close-popup />
         </q-card-actions>
       </q-card>
     </q-dialog>
@@ -47,30 +41,33 @@
 </template>
 
 <script setup lang="ts">
-import { defineAsyncComponent, onActivated, onMounted, ref } from 'vue'
+import { defineAsyncComponent, onMounted, ref, watch } from 'vue' // Importar watch
 import mapComposable from '@composables/map'
-import routeComposable from '@composables/route'
 import locationComposable from '@composables/location'
+import useTabsComposable from '@composables/tabs'
+import routeComposable from '@composables/route' // Importar routeComposable
 
-const MenuDialogsOptionsMap = defineAsyncComponent(() =>
-  import('@modules/map/MenuDialogsOptionsMap.vue'),
+const MenuDialogsOptionsMap = defineAsyncComponent(
+  () => import('@modules/map/MenuDialogsOptionsMap.vue'),
 )
 
 const {
   saveStateToLocalStorage,
   resetMapState,
-  loadStateFromLocalStorage,
   initMap,
-  map,
   hasMapElements,
+  map, // Exponer map para invalidar tamaño
 } = mapComposable()
-const { updateRoute } = routeComposable()
-const locationComposableInstance = locationComposable
-const { getCurrentLocation } = locationComposableInstance
+
+// Inicializar routeComposable
+const { updateRoute, startPos, endPos } = routeComposable()
+
+const { getCurrentLocation } = locationComposable
+const { tabs } = useTabsComposable()
 
 const obtenerUbicacionConPersistencia = async () => {
   await getCurrentLocation()
-  saveStateToLocalStorage()
+  saveStateToLocalStorage() // Considerar si esto debe llamar a updateRoute también
 }
 const confirmReset = ref(false)
 
@@ -78,24 +75,32 @@ const confirmResetAction = () => {
   resetMapState()
 }
 
-onMounted(() => {
-  initMap()
-
-  if (map) {
-    map?.invalidateSize()
-  }
-
-  // Load last location from local storage
-  void loadStateFromLocalStorage()
-})
-
-onActivated(() => {
-  void updateRoute(map)
-  if (map) {
-    loadStateFromLocalStorage()
-    map?.invalidateSize() // Asegurar redimensionamiento
+onMounted(() => { // Hacer onMounted async
+  if (tabs.select === 'map') {
+    initMap() // Llamar sin await
   }
 })
+
+// Observar cambios en la pestaña seleccionada
+watch(
+  () => tabs.select,
+  async (newTab) => {
+    if (newTab === 'map') {
+      // Esperar un ciclo de renderizado para asegurar que el div del mapa esté visible
+      await new Promise((resolve) => setTimeout(resolve, 0))
+      if (map) { // Acceder directamente a map
+        map.invalidateSize() // Ajustar tamaño del mapa
+      }
+      // Si no hay mapa inicializado aún (podría pasar si se cambia rápido)
+      if (!map) { // Acceder directamente a map
+         initMap() // Llamar sin await
+      } else if (startPos.value && endPos.value) {
+        // Si ya hay puntos, intentar redibujar la ruta
+        await updateRoute()
+      }
+    }
+  },
+)
 </script>
 
 <style>

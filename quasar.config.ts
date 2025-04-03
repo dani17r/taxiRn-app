@@ -13,7 +13,7 @@ export default defineConfig((/* ctx */) => {
     // app boot file (/src/boot)
     // --> boot files are part of "main.js"
     // https://v2.quasar.dev/quasar-cli-vite/boot-files
-    boot: ['axios', 'deeplinks'],
+    boot: ['init', 'axios', 'verifyEmail', 'resetPassword'],
 
     // https://v2.quasar.dev/quasar-cli-vite/quasar-config-file#css
     css: ['app.scss', 'tailwind.css'],
@@ -175,7 +175,7 @@ export default defineConfig((/* ctx */) => {
     // Full list of options: https://v2.quasar.dev/quasar-cli-vite/developing-capacitor-apps/configuring-capacitor
     capacitor: {
       hideSplashscreen: true,
-      appName: 'TaxiRn-app',
+      appName: 'TaxiRn',
       version: '1.4.0',
       description: 'App de contratos para carreritas, viajes, deliverys, encargos, etc.',
     },

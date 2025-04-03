@@ -188,7 +188,7 @@ const handleSubmit = async () => {
         // await store.vehicle.saveVehicle(...)
       }
 
-      notification().success({ message: 'Conductor actualizado' })
+      notify.success({ message: 'Conductor actualizado' })
       emit('driver-updated')
       onReset() // Reset form
     } else {
@@ -198,42 +198,42 @@ const handleSubmit = async () => {
         return
       }
       // Use the existing newUser action which handles user and vehicle creation
-      await store.auth.newUser(
+      await store.auth.signUp(
         {
           email: email.value,
           password: password.value,
           fullname: fullname.value,
           cedula: cedula.value,
-          role: 'driver', // Ensure role is set to driver
+          role: 'driver',
         },
-        (user) => {
+        (user_id) => {
           // Callback after user is created
-          if (user?.id) {
+          if (user_id) {
             store.vehicle
               .saveVehicle({
                 // Save vehicle linked to the new user
                 license_plate: license_plate.value,
                 vehicle_type: vehicle_type.value,
-                user_id: user.id, // Use the ID from the created user
+                user_id, // Use the ID from the created user
                 brand: brand.value,
                 color: color.value,
                 model: model.value,
                 year: year.value, // Assert as number
               })
               .then(() => {
-                notification().success({ message: 'Conductor registrado' })
+                notify.success({ message: 'Conductor registrado' })
                 emit('driver-created')
                 onReset()
               })
               .catch((vehicleError) => {
                 // Handle vehicle saving error specifically
                 console.error('Error saving vehicle:', vehicleError)
-                notification().errorCatch(vehicleError) // Use errorCatch for Supabase errors
+                notify.errorCatch(vehicleError) // Use errorCatch for Supabase errors
                 // Consider rolling back user creation or notifying admin
               })
           } else {
             console.error('User ID not available after creation.')
-            notification().error('Error al crear el usuario, ID no disponible.')
+            notify.error('Error al crear el usuario, ID no disponible.')
           }
         },
       )
@@ -242,7 +242,7 @@ const handleSubmit = async () => {
   } catch (error: any) {
     //no tocar
     console.error('Error in handleSubmit:', error)
-    notification().errorCatch(error) // Use errorCatch for potential Supabase errors
+    notify.errorCatch(error) // Use errorCatch for potential Supabase errors
   } finally {
     modelValue.value = false // Close dialog
   }

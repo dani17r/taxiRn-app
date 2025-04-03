@@ -51,31 +51,22 @@ export const useAuthStore = defineStore('authStore', {
         })
     },
 
-    async signUp(user: InputsI['RegisterI'], action?: ActionT) {
-      await supabase.auth
-        .signUp({
+    async signUp(user: InputsI['RegisterI'], action?: (id: string) => void) {
+      try {
+        const { data: user_id, error } = await supabase.rpc('add_new_user', {
           email: user.email,
           password: user.password,
+          fullname: user.fullname,
+          cedula: user.cedula,
+          role: user.role,
         })
-        .then(async ({ data: dataAuth, error }) => {
-          if (error) return notify.errorCatch(error) // Use errorCatch
-          if (dataAuth) {
-            await supabase
-              .from('users')
-              .insert([
-                {
-                  fullname: user.fullname,
-                  user_id: dataAuth.user?.id,
-                  email: user.email,
-                },
-              ])
-              .select()
-              .then(({ data: dataUser, error }) => {
-                if (error) return notify.errorCatch(error) // Use errorCatch
-                if (action) action(dataUser as unknown as UserI)
-              })
-          }
-        })
+
+        if (error) throw error
+        if (action) action(user_id)
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      } catch (error: any) {
+        notify.errorCatch(error)
+      }
     },
 
     //Login

@@ -8,10 +8,11 @@
       </q-toolbar>
 
       <q-card-section class="flex flex-col">
+        <!-- Guardar Ruta Actual: Disable if no route OR if it's already in DB -->
         <q-item
           clickable
           @click="dialogs.saveRoute.toggle()"
-          :disable="!currentRoute || !thereIsNoRoute"
+          :disable="!currentRoute || Boolean(isCurrentRouteInDB)"
         >
           <q-item-section class="block">
             <q-icon name="save" class="mr-3" size="17px" />
@@ -24,10 +25,11 @@
             <q-item-label class="inline">Ver mis Rutas</q-item-label>
           </q-item-section>
         </q-item>
+        <!-- Borrar Ruta Actual: Disable if no route OR if it's temporary/not in DB -->
         <q-item
           clickable
-          @click="deleteCurrentRouteExists"
-          :disable="!currentRoute || thereIsNoRoute"
+          @click="deleteCurrentRouteWrapper"
+          :disable="!currentRoute || !isCurrentRouteInDB"
         >
           <q-item-section class="block">
             <q-icon name="delete" class="mr-3" size="17px" />
@@ -57,23 +59,26 @@
       </q-toolbar>
 
       <q-card-section class="flex flex-col">
-        <q-list class="flex gap-">
+        <q-list class="flex flex-col gap-2"> <!-- Changed to flex-col -->
           <q-item
-            v-for="(route, index) in savedRoutes"
-            @click="loadRoute(route)"
+            v-for="(route) in savedRoutes"
+            @click="loadRouteWrapper(route)"
             v-close-popup
-            :key="index"
+            :key="route.id"
             clickable
             :class="[currentRoute?.id == route.id ? 'bg-yellow-8' : '', '!rounded-lg w-full']"
           >
             <q-item-section class="block">
-              <q-icon name="public" class="mr-1" size="28px" />
-              <q-item-label class="inline text-xl">{{ route.name }}</q-item-label>
+              <q-icon name="route" class="mr-1" size="28px" />
+              <q-item-label class="inline text-xl">{{ route.name || 'Ruta sin nombre' }}</q-item-label>
               <q-item-label caption>
                 Creado el:
-                {{ String(route.path) }}
+                {{ formatDate(route.created_at) }}
               </q-item-label>
             </q-item-section>
+          </q-item>
+          <q-item v-if="!savedRoutes.length">
+             <q-item-section class="text-center text-grey-7">No tienes rutas guardadas.</q-item-section>
           </q-item>
         </q-list>
       </q-card-section>
@@ -83,26 +88,34 @@
   <q-dialog v-model="dialogs.saveRoute.value" full-width>
     <q-card>
       <q-toolbar>
-        <q-icon name="add" size="25px" color="yellow-9" />
-        <q-toolbar-title>Nueva Ruta</q-toolbar-title>
+        <q-icon name="save" size="25px" color="yellow-9" />
+        <q-toolbar-title>Guardar Ruta</q-toolbar-title>
         <q-btn flat round dense icon="close" color="red" v-close-popup />
       </q-toolbar>
 
       <q-card-section class="flex flex-col">
         <q-input
           v-model="title"
-          label="Titulo"
-          aria-placeholder="Titulo"
+          label="Nombre de la Ruta"
+          aria-placeholder="Ej: Casa al Trabajo"
           :rules="[required]"
+          class="mb-4"
+          autogrow
+        />
+         <q-input
+          v-model="description"
+          label="Descripción (Opcional)"
+          aria-placeholder="Descripción breve"
           class="mb-8"
           autogrow
+          type="textarea"
         />
         <q-btn
           color="yellow-9"
           icon="check"
           label="Guardar"
           :disable="!title.length"
-          @click="validateAndSave()"
+          @click="validateAndSave"
         />
       </q-card-section>
     </q-card>
@@ -112,14 +125,14 @@
     <q-card>
       <q-toolbar>
         <q-icon name="warning" color="red" size="25px" />
-        <q-toolbar-title>Confirmar</q-toolbar-title>
+        <q-toolbar-title>Confirmar Eliminación Total</q-toolbar-title>
       </q-toolbar>
 
-      <q-card-section> ¿Estás seguro de eliminar todas las rutas? </q-card-section>
+      <q-card-section> ¿Estás seguro de que deseas eliminar TODAS tus rutas guardadas? Esta acción no se puede deshacer. </q-card-section>
 
       <q-card-actions align="right">
         <q-btn flat label="Cancelar" v-close-popup />
-        <q-btn flat label="Eliminar" color="red" @click="deleteAllRoutes()" v-close-popup />
+        <q-btn flat label="Eliminar Todo" color="red" @click="deleteAllRoutes" v-close-popup />
       </q-card-actions>
     </q-card>
   </q-dialog>
@@ -131,20 +144,42 @@ import superComposable from '@composables/super'
 import { onMounted, reactive, ref } from 'vue'
 import { required } from '@utils/validations'
 import routeComposable from '@composables/route'
-import { useQuasar } from 'quasar'
+import { useQuasar, date, Loading } from 'quasar' // Import date and Loading
+import type { RouteI } from '@interfaces/route' // Import RouteI type
 
 const $q = useQuasar()
 
 const { store } = superComposable()
-const { thereIsNoRoute, currentRoute, saveRoute, savedRoutes, loadRoute, deleteRoute, loadSavedRoutes } = routeComposable()
+// Import necessary functions and state from the updated composable
+const {
+  currentRoute,
+  saveRoute,
+  savedRoutes,
+  loadRoute,
+  initializeRoutes, // New initialization function
+  deleteCurrentRoute, // New delete function for the current route
+  isCurrentRouteInDB, // Computed property to check if the route is saved
+} = routeComposable()
 
 const modelValue = defineModel({ type: Boolean, default: false })
 const title = ref('')
+const description = ref('') // Added description ref
 
 const dialogs = reactive({
   saveRoute: {
     value: false,
-    toggle: () => (dialogs.saveRoute.value = !dialogs.saveRoute.value),
+    toggle: () => {
+      // Reset fields when opening save dialog if it's a new route
+      if (!isCurrentRouteInDB.value) {
+         title.value = ''
+         description.value = ''
+      } else if (currentRoute.value) {
+         // Pre-fill if editing (though saving currently only creates new)
+         title.value = currentRoute.value.name || ''
+         description.value = currentRoute.value.description || ''
+      }
+      dialogs.saveRoute.value = !dialogs.saveRoute.value
+    },
   },
   viewRoute: {
     value: false,
@@ -156,47 +191,95 @@ const dialogs = reactive({
   },
 })
 
+// Wrapper for loadRoute to potentially add logic later
+const loadRouteWrapper = async (route: RouteI) => {
+  await loadRoute(route)
+  // Optionally close the main dialog if open
+  // modelValue.value = false;
+}
+
 const deleteAllRoutes = async () => {
-  const { error } = await supabase
-    .from('routes')
-    .delete()
-    .eq('user_id', store.auth.current?.id);
+  Loading.show({ message: 'Eliminando todas las rutas...' })
+  try {
+    // We can call a Supabase function or delete directly
+    const { error } = await supabase
+      .from('routes')
+      .delete()
+      .eq('user_id', store.auth.current?.id) // Ensure user_id matches
 
-  if (!error) {
-    savedRoutes.value = [];
-    currentRoute.value = null;
+    if (error) throw error
+
+    // Clear local state after successful deletion
+    savedRoutes.value = []
+    // Check if the current route was among those deleted (it should be)
+    if (currentRoute.value && !currentRoute.value.id.startsWith('temp-')) {
+       // If currentRoute was a saved one, it's gone now.
+       // The deleteCurrentRoute function in the composable should handle map clearing.
+       // We might just need to nullify it here.
+       // Let's rely on deleteCurrentRoute called elsewhere or map reset.
+       // For safety, let's nullify if it wasn't temporary
+       currentRoute.value = null;
+    }
+
     $q.notify({
-      message: 'Todas las rutas eliminadas',
-      type: 'positive'
-    });
-  }
-};
-
-const validateAndSave = () => {
-  if (title.value) {
-    saveRoute(title.value)
-    
-      $q.notify({
-        message: 'Ruta guardada con existo',
-        icon: 'check',
-        type: 'positive',
-      })
-      modelValue.value = false
-      dialogs.saveRoute.toggle()
-  }
-}
-
-const deleteCurrentRouteExists = () => {
-  deleteRoute()
-    $q.notify({
-      message: 'Ruta Eliminada con existo',
-      icon: 'check',
+      message: 'Todas las rutas han sido eliminadas.',
       type: 'positive',
+      icon: 'delete_forever',
     })
-    modelValue.value = false
+  } catch (error) {
+    console.error('Error deleting all routes:', error)
+    $q.notify({
+      message: `Error al eliminar rutas: ${error instanceof Error ? error.message : 'Error desconocido'}`,
+      type: 'negative',
+      icon: 'warning',
+    })
+  } finally {
+    Loading.hide()
+  }
 }
 
-onMounted(() => {
-  loadSavedRoutes()
+const validateAndSave = async () => {
+  if (!title.value) {
+     $q.notify({ message: 'Por favor, ingresa un nombre para la ruta.', type: 'warning'})
+     return;
+  }
+  // Call the async saveRoute from the composable
+  await saveRoute(title.value, description.value)
+
+  // Check if it was saved (currentRoute should now have a non-temp ID)
+  if (isCurrentRouteInDB.value) {
+     // Notification is handled within saveRoute now
+     // $q.notify({
+     //   message: 'Ruta guardada con éxito',
+     //   icon: 'check',
+     //   type: 'positive',
+     // })
+     modelValue.value = false // Close the main dialog
+     dialogs.saveRoute.value = false // Close the save dialog
+     title.value = '' // Clear title after save
+     description.value = '' // Clear description
+  } else {
+     // Notification for failure is handled in saveRoute
+  }
+}
+
+// Renamed function and made async
+const deleteCurrentRouteWrapper = async () => {
+  // Call the async deleteCurrentRoute from the composable
+  await deleteCurrentRoute()
+  // Notification and state clearing are handled within deleteCurrentRoute
+
+  // Optionally close the main dialog
+  modelValue.value = false
+}
+
+// Helper to format date
+const formatDate = (dateInput: Date | string | number): string => {
+  return date.formatDate(dateInput, 'DD/MM/YYYY HH:mm')
+}
+
+onMounted(async () => {
+  // Initialize routes when component mounts
+  await initializeRoutes()
 })
 </script>

@@ -1,198 +1,197 @@
 <template>
   <q-page class="fixed left-0 top-13 w-full h-screen">
-    <q-scroll-area style="height: 90vh; width: 100%" class="pb-10">
-      <div class="q-pa-md">
-        <!-- Filtros y búsqueda -->
-        <div class="row q-col-gutter-md q-mb-md">
-          <div class="col-12 col-sm-6">
-            <q-input
-              v-model="searchQuery"
-              label="Buscar conductor"
-              outlined
-              clearable
-              debounce="300"
-              dense
-            >
-              <template v-slot:append>
-                <q-icon name="search" />
-              </template>
-            </q-input>
-          </div>
-          <div class="col-12 col-sm-6">
-            <q-select
-              v-model="vehicleTypeFilter"
-              :options="vehicleTypeOptions"
-              label="Tipo de vehículo"
-              outlined
-              clearable
-              map-options
-              emit-value
-              dense
+    <!-- Filtros y búsqueda -->
+    <div class="row px-4">
+      <div class="col-12 col-sm-6">
+        <q-input
+          v-model="searchQuery"
+          label="Buscar conductor"
+          clearable
+          debounce="300"
+          dense
+        >
+          <template v-slot:append>
+            <q-icon name="search" />
+          </template>
+        </q-input>
+      </div>
+      <div class="col-12 col-sm-6">
+        <q-select
+          v-model="vehicleTypeFilter"
+          :options="vehicleTypeOptions"
+          label="Tipo de vehículo"
+          clearable
+          map-options
+          emit-value
+          dense
+        />
+      </div>
+    </div>
+    <q-scroll-area style="height: 76vh; width: 100%" class="pb-22">
+      <q-list separator v-if="!isLoading">
+        <q-item v-for="driver in drivers" :key="driver.id" class="q-py-md flex flex-col">
+          <div>
+            <q-img
+              src="https://placehold.co/600x400"
+              :ratio="16 / 9"
+              spinner-color="primary"
+              spinner-size="82px"
             />
           </div>
-        </div>
+          <div class="mt-5">
+            <q-item-section avatar class="absolute right-5 top-43">
+              <q-avatar color="yellow-9" text-color="white" size="70px">
+                {{ driver.fullname?.charAt(0) }}
+              </q-avatar>
+            </q-item-section>
 
-       <div v-if="!isLoading">
-          <q-card 
-            v-for="driver in drivers"
-            :key="driver.id"
-            class="q-mb-md !shadow-none"
-          >
-            <q-card-section class="row items-center justify-between">
-              <div class="row items-center">
-                <q-avatar color="yellow-9" text-color="white" size="60px">
-                  {{ driver.fullname?.charAt(0) }}
-                </q-avatar>
-                <div class="q-ml-md">
-                  <div class="text-h6">{{ driver.fullname }}</div>
-                  <div class="text-caption">
-                    <q-icon name="badge" class="q-mr-xs" />
-                    {{ driver.cedula }}
-                  </div>
-                  <div class="text-caption">
-                    <q-icon name="phone" class="q-mr-xs" />
-                    {{ driver.phone || 'Sin teléfono' }}
-                  </div>
+            <q-item-section>
+              <q-item-label class="text-weight-bold text-subtitle1">{{
+                driver.fullname
+              }}</q-item-label>
+              <q-item-label caption lines="1">
+                <q-icon name="badge" size="xs" class="q-mr-xs" /> Cédula:
+                {{ driver.cedula || 'No registrada' }}
+              </q-item-label>
+              <q-item-label caption lines="1">
+                <q-icon name="phone" size="xs" class="q-mr-xs" /> Teléfono:
+                {{ driver.phone || 'No registrado' }}
+              </q-item-label>
+
+              <!-- Detalles del Vehículo -->
+              <div v-if="driver.vehicles[0]" class="q-mt-sm text-caption">
+                <div class="text-weight-medium q-mb-xs">
+                  Vehículo: {{ driver.vehicles[0].vehicle_type === 'car' ? 'Carro' : 'Moto' }}
+                </div>
+                <div class="row items-center q-mb-xs">
+                  <q-icon name="directions_car" class="q-mr-sm" size="xs" />
+                  <span
+                    >{{ driver.vehicles[0].brand }} {{ driver.vehicles[0].model }} ({{
+                      driver.vehicles[0].year
+                    }})</span
+                  >
                 </div>
               </div>
-
-              <!-- Vehículo -->
-              <div class="column q-ml-md" v-if="driver.vehicles">
-                <div class="row items-center">
-                  <q-icon name="directions_car" class="q-mr-sm" />
-                  <div>
-                    {{ driver.vehicles.brand }} {{ driver.vehicles.model }}
-                    <span class="text-caption">({{ driver.vehicles.year }})</span>
-                  </div>
-                </div>
-                <div class="row items-center">
-                  <q-icon name="confirmation_number" class="q-mr-sm" />
-                  <div>{{ driver.vehicles.license_plate }}</div>
-                </div>
-                <div class="row items-center">
-                  <q-icon name="category" class="q-mr-sm" />
-                  <div>{{ driver.vehicles.vehicle_type }}</div>
-                </div>
-              </div>
-
-              <div v-else class="text-italic text-grey">
+              <div v-else class="text-italic text-grey q-mt-sm text-caption">
                 Sin vehículo registrado
               </div>
-              <q-btn 
-                label="Contratar" 
-                color="yellow-9" 
+            </q-item-section>
+
+            <div class="flex mt-3 gap-3">
+              <!-- Botón Contratar -->
+              <q-btn
+                icon="handshake"
+                color="yellow-9"
                 @click="openMapModal(driver)"
-                class="q-ml-md"
-              />
-            </q-card-section>
-          </q-card>
-        </div>
-
-        <!-- Paginación corregida -->
-        <div class="row justify-center q-mt-xl">
-          <q-pagination
-            v-model="currentPage"
-            :max="totalPages"
-            :max-pages="6"
-            direction-links
-            boundary-links
-            @update:model-value="fetchDrivers"
-          />
-          <div class="text-caption q-mt-sm full-width text-center">
-            Mostrando {{ drivers.length }} de {{ totalDrivers }} conductores
-          </div>
-        </div>
-      </div>
-
-      <!-- Modal del Mapa -->
-      <q-dialog v-model="showMapModal">
-        <q-card style="min-width: 300px" class="!shadow-none">
-          <q-card-section>
-            <div class="text-h6">Seleccionar ubicación para {{ selectedDriver?.fullname }}</div>
-          </q-card-section>
-
-          <q-card-section class="q-pt-none">
-            <div class="column q-gutter-y-md">
-              <q-btn 
-                label="Obtener ruta del mapa" 
-                color="yellow-9" 
-                icon="map"
-              />
-              <q-btn 
-                label="Obtener lugar actual" 
-                color="secondary" 
-                icon="my_location"
-              />
+                label="Contratar"
+                aria-label="Contratar"
+                unelevated
+              >
+                <q-tooltip>Contratar</q-tooltip>
+              </q-btn>
+              <q-btn
+                icon="visibility"
+                color="yellow-10"
+                label="Ver"
+                aria-label="Ver el vehiculo"
+                unelevated
+              >
+                <q-tooltip>Contratar</q-tooltip>
+              </q-btn>
             </div>
-          </q-card-section>
+          </div>
+        </q-item>
 
-          <q-card-actions align="right">
-            <q-btn label="Cancelar" color="negative" flat v-close-popup />
-            <q-btn label="Aceptar" color="positive" @click="confirmSelection" v-close-popup />
-          </q-card-actions>
-        </q-card>
-      </q-dialog>
+        <q-item v-if="!drivers.length && !isLoading">
+          <q-item-section class="text-center text-grey-6 q-py-lg">
+            No se encontraron conductores que coincidan con la búsqueda.
+          </q-item-section>
+        </q-item>
+      </q-list>
 
       <q-inner-loading :showing="isLoading">
         <q-spinner-gears size="50px" color="yellow-9" />
       </q-inner-loading>
     </q-scroll-area>
+
+    <!-- Paginación corregida -->
+    <div class="row justify-center -mt-24">
+      <q-pagination
+        v-model="currentPage"
+        :max="totalPages"
+        :max-pages="6"
+        direction-links
+        boundary-links
+        @update:model-value="fetchDrivers"
+        color="yellow-9"
+      />
+      <div class="text-caption q-mt-sm full-width text-center">
+        Mostrando {{ drivers.length }} de {{ totalDrivers }} conductores
+      </div>
+    </div>
+
+    <!-- Modal del Mapa -->
+   <DialogContractDriver v-model="dialogs.viewContract.value" :driver="selectedDriver" />
   </q-page>
 </template>
 
 <script setup lang="ts">
-import { supabase } from '@services/supabase.services';
-import { ref, computed, watchEffect } from 'vue';
-import { useQuasar } from 'quasar';
+import DialogContractDriver from '@modules/vehicle/DialogContractDriver.vue'
+import { supabase } from '@services/supabase.services'
+import { ref, computed, watchEffect, reactive } from 'vue'
+import { useQuasar } from 'quasar'
+import type { DriverT } from '@interfaces/user'
 
-const $q = useQuasar();
+const $q = useQuasar()
 
-// Estado reactivo
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-const drivers = ref<any[]>([]);
-const isLoading = ref(false);
-const searchQuery = ref('');
-const vehicleTypeFilter = ref<string | null>(null);
-const currentPage = ref(1);
-const itemsPerPage = ref(10);
-const totalDrivers = ref(0);
-const showMapModal = ref(false);
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-const selectedDriver = ref<any>(null);
+const selectedLocationInfo = ref<string | null>(null)
+const vehicleTypeFilter = ref<string | null>(null)
+const selectedDriver = ref<DriverT|null>(null)
+const drivers = ref<DriverT[]>([])
+const serviceDescription = ref('')
+const itemsPerPage = ref(10)
+const isLoading = ref(false)
+const totalDrivers = ref(0)
+const searchQuery = ref('')
+const currentPage = ref(1)
 
-// Opciones de filtro
+const dialogs = reactive({
+  viewContract: {
+    value: false,
+    toggle: () => (dialogs.viewContract.value = !dialogs.viewContract.value),
+  },
+})
+
 const vehicleTypeOptions = [
   { label: 'Carro', value: 'car' },
-  { label: 'Moto', value: 'motorcycle' }
-];
+  { label: 'Moto', value: 'motorcycle' },
+]
 
-const confirmSelection = () => {
-  // Lógica para confirmar la selección
-  console.log('Contratación confirmada para:', selectedDriver.value);
-};
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-const openMapModal = (driver: any) => {
-  selectedDriver.value = driver;
-  showMapModal.value = true;
-};
+const resetModal = () => {
+  serviceDescription.value = ''
+  selectedLocationInfo.value = null
+}
 
-// Cálculos
-const totalPages = computed(() => Math.ceil(totalDrivers.value / itemsPerPage.value));
+const openMapModal = (driver: DriverT) => {
+  selectedDriver.value = driver
+  dialogs.viewContract.toggle()
+  resetModal() 
+}
 
 // Cálculos
-// const totalPages = computed(() => Math.ceil(totalDrivers.value / itemsPerPage.value));
+const totalPages = computed(() => Math.ceil(totalDrivers.value / itemsPerPage.value))
 
 // Observadores
 watchEffect(() => {
-  fetchDrivers().catch(() => null);
-});
+  fetchDrivers().catch(() => null)
+})
 
 // Función para obtener conductores
 async function fetchDrivers() {
   try {
-    isLoading.value = true;
-    const from = (currentPage.value - 1) * itemsPerPage.value;
-    const to = from + itemsPerPage.value - 1;
+    isLoading.value = true
+    const from = (currentPage.value - 1) * itemsPerPage.value
+    const to = from + itemsPerPage.value - 1
 
     const { data, error, count } = await supabase
       .from('users')
@@ -201,20 +200,20 @@ async function fetchDrivers() {
       .range(from, to)
       .order('created_at', { ascending: false })
       .or(`fullname.ilike.%${searchQuery.value}%,cedula.ilike.%${searchQuery.value}%`)
-      .filter(vehicleTypeFilter.value ? 'vehicles.vehicle_type' : '', 'eq', vehicleTypeFilter.value);
+      .filter(vehicleTypeFilter.value ? 'vehicles.vehicle_type' : '', 'eq', vehicleTypeFilter.value)
 
-    if (error) throw error;
-    
-    drivers.value = data || [];
-    totalDrivers.value = count || 0;
+    if (error) throw error
+
+    drivers.value = data || []
+    totalDrivers.value = count || 0
   } catch (error) {
     $q.notify({
       type: 'negative',
       message: 'Error al cargar conductores',
       caption: (error as Error).message,
-    });
+    })
   } finally {
-    isLoading.value = false;
+    isLoading.value = false
   }
 }
 </script>
@@ -225,18 +224,12 @@ async function fetchDrivers() {
   justify-content: center;
   padding: 20px 0;
 }
-
-.q-card {
-  transition: all 0.3s ease;
-  
-  &:hover {
-    transform: scale(1.02);
-    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
-  }
-}
-
 .q-dialog__card {
   border-radius: 12px;
   overflow: hidden;
+}
+
+.q-item__section--avatar {
+  min-width: 50px;
 }
 </style>

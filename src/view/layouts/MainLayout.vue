@@ -69,12 +69,13 @@
         animated
       >
         <q-tab-panel
-          v-for="tabItem in tabs.values"
+          v-for="tab in tabs.values"
           :class="tabs.select == 'map' ? '!p-0' : ''"
-          :name="tabItem.name"
-          :key="tabItem.name"
+          :name="tab.name"
+          :key="tab.name"
+          keep-alive
         >
-          <router-view />
+          <router-view :key="tab.name"/>
         </q-tab-panel>
       </q-tab-panels>
     </q-page-container>

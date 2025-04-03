@@ -229,7 +229,6 @@ const dialogs = reactive({
 // Function to open the dialog for editing
 const editDriver = (driver: NewUserT) => {
   editingDriver.value = driver;
-  // editingDriver.value = null;
 dialogs.newDriver.toggle();
 }
 
@@ -248,18 +247,24 @@ function deleteDriver(driverId: string) {
     class: '!shadow-none',
     // eslint-disable-next-line @typescript-eslint/no-misused-promises
   }).onOk(async () => {
-    await supabase.from('vehicles').delete().eq('user_id', driverId)
-    await supabase.from('users').delete().eq('id', driverId)
-    await supabase.auth.admin.deleteUser(driverId)
-    // Consider Supabase edge function or trigger for deleting auth user to ensure atomicity
-    // await supabase.auth.admin.deleteUser(driverId) // Be careful with this, ensure user_id matches auth.users.id
-
-    $q.notify({
-      type: 'positive',
-      message: 'Conductor eliminado exitosamente',
-    })
-
-    fetchDrivers(currentPage.value, 10).catch(() => {})
+    try {
+      await supabase.rpc('delete_user', {
+        p_user_id: driverId
+      }).then(()=>{
+        $q.notify({
+          type: 'positive',
+          message: 'Conductor eliminado exitosamente',
+        })
+  
+        fetchDrivers(currentPage.value, 10).catch(() => {})
+      })
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    } catch (error: any){
+        $q.notify({
+          type: 'negative',
+          message: error.message,
+        })
+    }
   })
 }
 

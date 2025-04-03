@@ -1,5 +1,13 @@
 {
   "appId": "com.github.dani17r.appname",
-  "appName": "TaxiRn App",
-  "webDir": "www"
+  "appName": "TaxiRn",
+  "webDir": "www",
+  "plugins": {
+    "CapacitorHttp": {
+      "enabled": true
+    }
+  },
+  "android": {
+    "scheme": "TaxiRnApp"
+  }
 }

@@ -95,31 +95,7 @@ const getCurrentLocation = async (): Promise<void> => {
   try {
     const position = await Geolocation.getCurrentPosition()
     const pos = L.latLng(position.coords.latitude, position.coords.longitude)
-    const currentCoords = [pos.lng, pos.lat]
-
-    // Check if these coordinates exist in the DB-loaded locations
-    const existing = locations.value.find(
-      (l) =>
-        !l.id?.startsWith('temp-') && // Important: Check only saved locations
-        l.coordinates?.coordinates &&
-        l.coordinates.coordinates.length >= 2 &&
-        l.coordinates.coordinates[0] === currentCoords[0] &&
-        l.coordinates.coordinates[1] === currentCoords[1],
-    )
-
-    if (existing) {
-      currentLocation.value = existing // Use the existing DB record
-    } else {
-      // Create a temporary representation for this new location
-      currentLocation.value = {
-        id: `temp-${Date.now()}`,
-        user_id: String(store.auth.current?.id),
-        name: 'Current Location', // Placeholder
-        description: '',
-        coordinates: { type: 'Point', coordinates: currentCoords },
-        created_at: new Date(),
-      }
-    }
+    // const currentCoords = [pos.lng, pos.lat]
 
     // Reset route and clear map layers before setting new point
     resetRouteState(map)

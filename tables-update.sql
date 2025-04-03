@@ -8,9 +8,11 @@ create table public.users (
   role varchar(255) not null default 'user',
   email varchar(255) not null unique,
   fullname varchar(255) not null,
-  cedula text null unique, -- Añadido UNIQUE para evitar duplicados
+  cedula varchar(255) null unique, -- Añadido UNIQUE para evitar duplicados
   description text,
   is_blocked boolean null default false,
+  phone varchar(255) null,
+  year_of_birth varchar(255) null
   images jsonb default '{"ground": null, "profile": null}',
   created_at timestamptz default current_timestamp,
   updated_at timestamptz default current_timestamp
