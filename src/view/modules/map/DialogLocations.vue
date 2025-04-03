@@ -11,7 +11,7 @@
         <q-item
           clickable
           @click="dialogs.saveLocation.toggle()"
-          :disable="!isStartPos || isLocalitacionExist"
+          :disable="!isStartPos || isLocationExist"
         >
           <q-item-section class="block">
             <q-icon name="save" class="mr-3" size="17px" />
@@ -25,7 +25,7 @@
           </q-item-section>
         </q-item>
         
-        <q-item clickable @click="deleteCurrentLocationExists" :disable="!isStartPos || !isLocalitacionExist || isRoute">
+        <q-item clickable @click="deleteCurrentLocationExists" :disable="!(!isStartPos || isLocationExist) || !isStateRoute">
           <q-item-section class="block">
             <q-icon name="delete" class="mr-3" size="17px" />
             <q-item-label class="inline">Borrar Ubicación Actual</q-item-label>
@@ -149,10 +149,10 @@ const {
   saveLocation,
   getLocation,
  location,
- isLocalitacionExist
+ isLocationExist
 } = locationComposable()
 
-const { isStartPos, isRoute } = useStateMapComposable()
+const { isStartPos, isStateRoute } = useStateMapComposable()
 
 const modelValue = defineModel({ type: Boolean, default: false })
 
@@ -203,11 +203,6 @@ const validateAndSave = async () => {
 
 const deleteCurrentLocationExists = async () => {
     await deleteCurrentLocation().then(() => {
-      $q.notify({
-        message: 'Ubicacion Eliminada con existo',
-        icon: 'check',
-        type: 'positive',
-      })
       modelValue.value = false
     })
 }

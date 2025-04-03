@@ -8,12 +8,13 @@ export default () => {
     handleMapClick,
     getMapPersisten,
     setMapPersisten,
-    isLocalitacion,
+    isLocation,
     STORAGE_KEY,
     isStartPos,
     startIcon,
     isEndPos,
     template,
+    location,
     isRoute,
     endIcon,
     marker,
@@ -51,6 +52,7 @@ export default () => {
   const deletePoint = (type: 'start' | 'end', save = true) => {
     if (!map.value) return
 
+    route.current = null
     if (type === 'start' && marker.start) {
       map.value.removeLayer(marker.start as unknown as L.Layer)
       marker.start = null
@@ -77,12 +79,13 @@ export default () => {
   const initMap = (name = 'map') => {
     map.value = L.map(name)
     map.value.setView([10.196805, -71.30903], 14)
-    map.value.on('click', (e) => handleMapClick(e))
     map.value.addLayer(baseLayers.GoogleMaps)
     updateMapLayer(baseLayers.GoogleMaps)
 
     getMapPersisten()
     loadPoints()
+
+    map.value.on('click', (e) => handleMapClick(e))
 
     void getRouteLine()
 
@@ -112,6 +115,8 @@ export default () => {
 
     route.startPos = null
     route.endPos = null
+    route.current = null
+    location.current = null
 
     clearRouteLine()
 
@@ -127,7 +132,7 @@ export default () => {
     loadPoints,
     resetMap,
     initMap,
-    isLocalitacion,
+    isLocation,
     isStartPos,
     isRoute,
     isEndPos,

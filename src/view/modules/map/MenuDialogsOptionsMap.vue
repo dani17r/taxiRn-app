@@ -18,9 +18,9 @@
 </template>
 
 <script setup lang="ts">
-const DialogLocations = defineAsyncComponent(() => import("@modules/map/DialogLocations.vue"))
-const DialogRoutes = defineAsyncComponent(() => import("@modules/map/DialogRoutes.vue"))
-import { defineAsyncComponent, reactive } from 'vue'
+import DialogLocations from "@modules/map/DialogLocations.vue"
+import DialogRoutes from "@modules/map/DialogRoutes.vue"
+import { reactive } from 'vue'
 
 const dialogs = reactive({
   locations: {

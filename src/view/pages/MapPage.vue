@@ -2,16 +2,16 @@
   <q-page class="fixed left-0 top-13 w-full h-screen">
     <div id="map" class="h-screen w-full"></div>
 
-     <q-btn
+    <q-btn
       round
       color="red"
       icon="close"
       class="fixed bottom-32 right-3 z-1000"
       @click="dialogs.resetMap.togle()"
-      :disable="!isLocalitacion"
+      :disable="!isLocation"
     />
 
-     <q-btn
+    <q-btn
       class="q-ma-md fixed top-9 -right-3 z-1000 text-grey-8 !shadow-0 opacity-70"
       @click="getCurrentLocation()"
       label="Obtener Ubicación"
@@ -43,25 +43,25 @@
 
 <script setup lang="ts">
 import MenuDialogsOptionsMap from '@modules/map/MenuDialogsOptionsMap.vue'
-import useMapComposable from '@composables/map/main'
 import useLocationComposable from '@composables/map/useLocation'
+import useMapComposable from '@composables/map/main'
 import useTabsComposable from '@composables/tabs'
 import { onMounted, reactive } from 'vue'
 
 const { tabs } = useTabsComposable()
 const { getCurrentLocation } = useLocationComposable()
-const { initMap, resetMap, isLocalitacion } = useMapComposable()
+const { initMap, resetMap, isLocation } = useMapComposable()
 
 const dialogs = reactive({
-    resetMap:{
-        value: false,
-        togle: () => dialogs.resetMap.value = !dialogs.resetMap.value,
-    },
+  resetMap: {
+    value: false,
+    togle: () => (dialogs.resetMap.value = !dialogs.resetMap.value),
+  },
 })
 
 onMounted(() => {
   if (tabs.select === 'map') {
-    initMap() 
+    initMap()
   }
 })
 </script>

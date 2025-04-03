@@ -90,7 +90,9 @@ export default () => {
   const isStartPos = computed(() => route.startPos != null)
   const isEndPos = computed(() => route.endPos != null)
   const isRoute = computed(() => isStartPos.value && isEndPos.value)
-  const isLocalitacion = computed(() => isStartPos.value || isEndPos.value)
+  const isLocation = computed(() => isStartPos.value || isEndPos.value)
+  const isStateLocation = computed(() => location.current != null)
+  const isStateRoute = computed(() => route.current != null)
 
   return {
     STORAGE_KEY,
@@ -98,7 +100,9 @@ export default () => {
     getMapPersisten,
     handleMapClick,
     updateMapLayer,
-    isLocalitacion,
+    isStateLocation,
+    isStateRoute,
+    isLocation,
     isStartPos,
     startIcon,
     location,

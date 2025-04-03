@@ -98,20 +98,22 @@ export default () => {
 
   const getLocation = (locationSelect: LocationI) => {
     if (!map.value) return
-    location.current = locationSelect
 
     if (locationSelect.coordinates?.coordinates) {
       const coords = locationSelect.coordinates.coordinates
       const pos = L.latLng(Number(coords[0]), Number(coords[1]))
 
       window.map.deletePoint('end')
+      window.map.deletePoint('start')
       window.map.createPoint('start', Number(coords[0]), Number(coords[1]))
       map.value.setView(pos, 16)
     }
+
+    location.current = locationSelect
   }
 
   const saveLocation = async (name: string) => {
-    if (isLocalitacionExist.value) {
+    if (isLocationExist.value) {
       Notify.create({ type: 'info', message: 'This location is already saved.' })
       return
     }
@@ -179,10 +181,14 @@ export default () => {
     window.map.deletePoint('start')
     clearRouteLine()
 
-    Notify.create({ type: 'positive', message: 'Se borro correctamente.' })
+    Notify.create({
+      message: 'Ubicacion Eliminada con existo',
+      icon: 'check',
+      type: 'positive',
+    })
   }
 
-  const isLocalitacionExist = computed(() => {
+  const isLocationExist = computed(() => {
     if (!location.current) return false
 
     const coorsLocation = location.current.coordinates.coordinates
@@ -196,7 +202,7 @@ export default () => {
     saveLocation,
     getLocations,
     getLocation,
-    isLocalitacionExist,
+    isLocationExist,
     location,
   }
 }
