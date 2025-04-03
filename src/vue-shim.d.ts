@@ -25,6 +25,10 @@ declare global {
       setPoint: (type: 'start' | 'end', lat: number, lng: number) => void
       deletePoint: (type: 'start' | 'end') => void
     }
+    map: {
+      createPoint: (type: 'start' | 'end', lat: number, lng: number) => void
+      deletePoint: (type: 'start' | 'end') => void
+    }
   }
 }
 

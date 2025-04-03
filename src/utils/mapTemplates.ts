@@ -3,21 +3,23 @@ import L from 'leaflet'
 export const createPopupButton = (type: 'start' | 'end', latlng: L.LatLng): string => {
   return `
   <button class="full-width q-mt-sm q-btn q-btn--flat text-${type === 'start' ? 'positive' : 'negative'}"
-      onclick="window.vueActions.setPoint('${type}', ${latlng.lat}, ${latlng.lng})">
+      onclick="window.map.createPoint('${type}', ${latlng.lat}, ${latlng.lng})">
       Establecer ${type === 'start' ? 'inicio' : 'fin'} aquí
   </button>
   `
 }
 
-export const createMarkerPopup = (type: 'start' | 'end'): string => `
+export const createMarkerPopup = (map: L.Map, type: 'start' | 'end'): string => {
+  return `
   <div class="q-pa-sm">
     <h6 class="q-my-none">Punto de ${type === 'start' ? 'inicio' : 'fin'}</h6>
     <button class="full-width q-mt-sm q-btn q-btn--flat text-negative"
-      onclick="window.vueActions.deletePoint('${type}')">
+      onclick="window.map.deletePoint('${type}')">
       Eliminar
     </button>
   </div>
 `
+}
 
 export const createPopupContent = (
   startPos: L.LatLng | null,
@@ -25,9 +27,8 @@ export const createPopupContent = (
   latlng: L.LatLng,
 ): HTMLElement => {
   const content = document.createElement('div')
-  content.className = 'q-pa-sm'
   content.innerHTML = `
-    <h6 class="q-my-none">Seleccionar punto</h6>
+    <h6 class="w-full text-center">Seleccionar punto</h6>
     ${!startPos ? createPopupButton('start', latlng) : ''}
     ${!endPos ? createPopupButton('end', latlng) : ''}
   `

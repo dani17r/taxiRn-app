@@ -1,14 +1,14 @@
 <template>
-  <q-menu anchor="bottom start" self="bottom end">
+  <q-menu anchor="bottom start" self="bottom end" class="flex flex-col self-center bg-one">
       <q-item clickable @click="dialogs.locations.toggle" v-close-popup>
-        <q-item-section class="block">
-          <q-icon name="pin_drop" class="mr-3" size="17px" />
+        <q-item-section class="inline-block self-center">
+          <q-icon name="pin_drop" class="mr-2" size="17px" />
           <q-item-label class="inline">Ubicaciones</q-item-label>
         </q-item-section>
       </q-item>
       <q-item clickable @click="dialogs.routes.toggle" v-close-popup>
-        <q-item-section class="block">
-          <q-icon name="map" class="mr-3" size="17px" />
+        <q-item-section class="inline-block self-center">
+          <q-icon name="map" class="mr-2" size="17px" />
           <q-item-label class="inline">Rutas</q-item-label>
         </q-item-section>
       </q-item>

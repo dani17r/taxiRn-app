@@ -39,7 +39,7 @@
         </div>
       </q-form>
 
-      <q-dialog v-model="showSuccessDialog">
+      <q-dialog v-model="showSuccessDialog" class="backdrop-blur-[3px]">
         <q-card>
           <q-card-section>
             <div class="text-h6">Éxito!</div>

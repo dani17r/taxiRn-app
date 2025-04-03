@@ -22,7 +22,7 @@
               no-caps
               @click="useCurrentLocation"
             />
-            {{ hasMapElements }} {{ currentLocation != null }}
+            <!-- {{ hasMapElements }} {{ currentLocation != null }} -->
             <!-- Aquí podrías mostrar la ubicación/ruta seleccionada -->
             <div v-if="selectedLocationInfo" class="text-caption text-grey">
               {{ selectedLocationInfo }}
@@ -67,16 +67,16 @@
 
 <script setup lang="ts">
 // import { supabase } from '@services/supabase.services'
-import useLocationComposable from '@composables/location'
+// import useLocationComposable from '@composables/location'
 import useTabsComposable from '@composables/tabs'
-import useMapComposable from '@composables/map'
+// import useMapComposable from '@composables/map'
 import type { DriverT } from '@interfaces/user'
 import { ref, computed, onMounted } from 'vue'
 import { useQuasar } from 'quasar'
 
 const $q = useQuasar()
-const { hasMapElements,initMap } = useMapComposable()
-const { currentLocation  } = useLocationComposable
+// const { hasMapElements,initMap } = useMapComposable()
+// const { currentLocation  } = useLocationComposable
 const { tabs } = useTabsComposable()
 
 const valueModel = defineModel({ default: false });
@@ -116,7 +116,7 @@ const sendContract = () => {
 
 onMounted(()=> {
   if(tabs.select == 'map') {
-  initMap('dialogmap')
+  // initMap('dialogmap')
   }
 })
 

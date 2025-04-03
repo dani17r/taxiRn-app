@@ -1,3 +1,4 @@
+import type { RouteResponse } from '@interfaces/route'
 import L from 'leaflet'
 
 export const baseLayers = {
@@ -33,13 +34,20 @@ export const baseLayers = {
   ),
 }
 
-export const fetchRoute = (
-  start: { lng: number; lat: number },
-  end: { lng: number; lat: number },
-): Promise<Response> => {
-  return fetch(
+export const fetchRoute = async (start: L.LatLng, end: L.LatLng): Promise<RouteResponse> => {
+  const response = await fetch(
     `https://router.project-osrm.org/route/v1/driving/` +
       `${start.lng},${start.lat};` +
       `${end.lng},${end.lat}?overview=full&geometries=geojson`,
   )
+
+  if (!response.ok) throw new Error(`API response error: ${response.statusText}`)
+
+  const data = await response.json()
+  if (!data.routes?.[0]?.geometry?.coordinates)
+    throw new Error('Route geometry not found in API response')
+
+  if (!data.routes?.[0]?.geometry) throw new Error('Route not found')
+
+  return data
 }

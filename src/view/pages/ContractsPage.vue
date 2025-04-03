@@ -53,7 +53,7 @@
     </q-dialog>
 
     <!-- Modal Pago -->
-    <q-dialog v-model="paymentDialogVisible">
+    <q-dialog v-model="paymentDialogVisible" class="backdrop-blur-[3px]">
       <q-card style="min-width: 350px">
         <q-card-section>
           <div class="text-h6">Registrar Pago - Contrato N° {{ selectedContract?.numero }}</div>
@@ -97,10 +97,10 @@
 <script lang="ts" setup>
 import { ref, nextTick } from 'vue';
 import { useQuasar } from 'quasar';
-import mapComposable from '@composables/map'; // Importar el composable del mapa
+// import mapComposable from '@composables/map'; // Importar el composable del mapa
 
 const $q = useQuasar();
-const { initMap, map: mapInstanceComposable } = mapComposable(); // Obtener funciones del composable
+// const { initMap, map: mapInstanceComposable } = mapComposable(); // Obtener funciones del composable
 
 // Estado de los modales
 const mapDialogVisible = ref(false);
@@ -137,10 +137,10 @@ const openMapDialog = async (contract: Contract) => {
   // Esperar a que el DOM del modal esté listo antes de inicializar el mapa
   await nextTick();
   // Llamar a la función initMap del composable
-  initMap(); 
+  // initMap(); 
   // Forzar redimensionamiento por si acaso
   setTimeout(() => {
-      mapInstanceComposable?.invalidateSize();
+      // mapInstanceComposable?.invalidateSize();
   }, 100);
   // TODO: Cargar la ruta específica del contrato 'selectedContract.value' en el mapa
   // Esto requerirá probablemente una nueva función en el composable o lógica adicional aquí.
