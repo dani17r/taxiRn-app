@@ -15,7 +15,7 @@
             label="Cambiar foto de perfil"
             accept=".jpg, .png, .jpeg"
             class="w-full mod-input"
-            v-model="file"
+            v-model="currentFile"
             borderless
             max-files="1"
           />
@@ -115,17 +115,19 @@ import type { InputsI } from '@interfaces/user'
 import { useCedula } from '@composables/useCedula'
 import supabase from '@services/supabase.services'
 import useRoleComposable from '@composables/role'
-import { ref, onMounted, computed } from 'vue'
+import { ref, onMounted } from 'vue'
 import useSuper from '@composables/super'
 import { Notify, date } from 'quasar'
+import imageProfileComposable from '@composables/images'
 
 const { cedula, validationRules, resetCedula } = useCedula()
 
 const { isRoleLabel } = useRoleComposable()
 const { store } = useSuper()
+const { avatarUrl } = imageProfileComposable(store)
 
 const loading = ref(false)
-const file = ref(null)
+const currentFile = ref(null)
 const userData = ref<InputsI['UpdateI']>({
   images: { profile: null },
   description: '',
@@ -136,17 +138,6 @@ const userData = ref<InputsI['UpdateI']>({
   phone: '',
 })
 
-// URL del avatar computada
-const avatarUrl = computed(() => {
-  if (!userData.value.images?.profile) return 'https://placehold.co/150x150'
-
-  const {
-    data: { publicUrl },
-  } = supabase.storage.from('avatars').getPublicUrl(userData.value.images.profile)
-
-  // Forzar actualización de caché
-  return `${publicUrl}?${Date.now()}`
-})
 
 // Cargar datos iniciales
 const fetchUserData = () => {
@@ -208,6 +199,7 @@ const handleImageUpload = async (file: File) => {
     // Actualizar estado local
     store.auth.current!.images!.profile = fileName
     userData.value.images!.profile = fileName
+    currentFile.value = null
 
     Notify.create({
       type: 'positive',

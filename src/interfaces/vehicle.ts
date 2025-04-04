@@ -1,3 +1,7 @@
+export interface VehicleImagesI {
+  ground?: string | null
+}
+
 export interface VehicleI {
   id: string
   user_id: string
@@ -9,6 +13,7 @@ export interface VehicleI {
   year: number
   color: string
   created_at: Date
+  images: VehicleImagesI
 }
 
 export interface StateI {

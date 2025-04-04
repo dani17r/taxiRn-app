@@ -37,7 +37,7 @@
 
 <script setup lang="ts">
 import type { routerLink } from '@components/EssentialLink.vue'
-import imageProfileComposable from '@composables/imageProfile'
+import imageProfileComposable from '@composables/images'
 import superComposable from '@composables/super'
 import notification from '@utils/notification'
 import roleComposable from '@composables/role'

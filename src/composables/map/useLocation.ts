@@ -4,27 +4,44 @@ import supabase from '@services/supabase.services'
 import routeMap from '@composables/map/useRoute'
 import superComposable from '@composables/super'
 import stateMap from '@composables/map/state'
+import { computed, ref } from 'vue'
 import { Notify } from 'quasar'
-import { computed } from 'vue'
 
 export default () => {
   const { location, route, map, L } = stateMap()
   const { store } = superComposable()
   const { getRouteLine, clearRouteLine } = routeMap()
 
+  const disbleButtonLocation = ref(false)
+
   const getPermission = async (): Promise<boolean> => {
+    disbleButtonLocation.value = false
     try {
       const { location } = await Geolocation.checkPermissions()
       if (location === 'granted') return true
-      const { location: newPermission } = await Geolocation.requestPermissions()
+      const { location: newPermission } = await Geolocation.requestPermissions({
+        permissions: ['location', 'coarseLocation'],
+      })
+      if (newPermission === 'denied') {
+        Notify.create({ type: 'negative', message: 'Location permission denied!' })
+        return false
+      }
+      if (newPermission === 'prompt') {
+        Notify.create({ type: 'info', message: 'Location permission is required!' })
+        return false
+      }
       if (newPermission !== 'granted') {
         Notify.create({ type: 'negative', message: 'You must grant location permissions!' })
         return false
       }
+
+      setTimeout(() => (disbleButtonLocation.value = false), 1000)
       return true
-    } catch (error) {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    } catch (error: any) {
       console.error(error)
-      Notify.create({ type: 'negative', message: 'Error checking location permissions.' })
+      Notify.create({ type: 'negative', message: error.message })
+      setTimeout(() => (disbleButtonLocation.value = false), 1000)
       return false
     }
   }
@@ -202,6 +219,7 @@ export default () => {
     saveLocation,
     getLocations,
     getLocation,
+    disbleButtonLocation,
     isLocationExist,
     location,
   }

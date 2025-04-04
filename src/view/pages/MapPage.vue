@@ -13,6 +13,7 @@
 
     <q-btn
       class="q-ma-md fixed top-9 -right-3 z-1000 text-grey-8 !shadow-0 opacity-70"
+      :disable="disbleButtonLocation"
       @click="getCurrentLocation()"
       label="Obtener Ubicación"
       icon="my_location"
@@ -49,7 +50,7 @@ import useTabsComposable from '@composables/tabs'
 import { onMounted, reactive } from 'vue'
 
 const { tabs } = useTabsComposable()
-const { getCurrentLocation } = useLocationComposable()
+const { getCurrentLocation, disbleButtonLocation } = useLocationComposable()
 const { initMap, resetMap, isLocation } = useMapComposable()
 
 const dialogs = reactive({

@@ -32,7 +32,7 @@
         <q-item v-for="driver in drivers" :key="driver.id" class="q-py-md flex flex-col">
           <div>
             <q-img
-              src="https://placehold.co/600x400"
+              :src="driver.vehicles[0]?.images ? imageVehiclesUrls({ ...driver.vehicles[0].images, ground: driver.vehicles[0].images.ground || null }) : ''"
               :ratio="16 / 9"
               spinner-color="primary"
               spinner-size="82px"
@@ -40,8 +40,10 @@
           </div>
           <div class="mt-5">
             <q-item-section avatar class="absolute right-5 top-43">
-              <q-avatar color="yellow-9" text-color="white" size="70px">
-                {{ driver.fullname?.charAt(0) }}
+              <q-avatar size="70px">
+                <q-img
+                  :src="avatarsUrls({ profile: driver.images?.profile || null, ground: '' }, driver.fullname)" referrerpolicy="no-referrer"
+                />
               </q-avatar>
             </q-item-section>
 
@@ -141,8 +143,10 @@ import { supabase } from '@services/supabase.services'
 import { ref, computed, watchEffect, reactive } from 'vue'
 import { useQuasar } from 'quasar'
 import type { DriverT } from '@interfaces/user'
+import useImagesComposable from '@composables/images'
 
 const $q = useQuasar()
+const { imageVehiclesUrls, avatarsUrls } = useImagesComposable()
 
 const selectedLocationInfo = ref<string | null>(null)
 const vehicleTypeFilter = ref<string | null>(null)

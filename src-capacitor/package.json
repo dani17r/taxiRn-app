@@ -5,9 +5,10 @@
   "author": "neribel",
   "private": true,
   "dependencies": {
-    "@capacitor/android": "^6.0.0",
-    "@capacitor/app": "^6.0.0",
-    "@capacitor/cli": "^6.0.0",
-    "@capacitor/core": "^6.0.0"
+    "@capacitor/android": "^7.2.0",
+    "@capacitor/app": "^7.0.1",
+    "@capacitor/cli": "^7.2.0",
+    "@capacitor/core": "^7.2.0",
+    "@capacitor/geolocation": "^7.1.1"
   }
 }

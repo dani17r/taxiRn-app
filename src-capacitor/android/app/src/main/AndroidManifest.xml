@@ -26,19 +26,19 @@
                 <action android:name="android.intent.action.VIEW" />
                 <category android:name="android.intent.category.DEFAULT" />
                 <category android:name="android.intent.category.BROWSABLE" />
-                <data android:scheme="taxirnapp" android:host="reset-password" />
+                <data android:scheme="wiretapping" android:host="reset-password" />
             </intent-filter>
             <intent-filter>
                 <action android:name="android.intent.action.VIEW" />
                 <category android:name="android.intent.category.DEFAULT" />
                 <category android:name="android.intent.category.BROWSABLE" />
-                <data android:scheme="taxirnapp" android:host="verify" />
+                <data android:scheme="wiretapping" android:host="verify" />
             </intent-filter>
         </activity>
 
         <provider
             android:name="androidx.core.content.FileProvider"
-            android:authorities="${applicationId}.fileprovider"
+            android:authorities="${applicationId}.file provider"
             android:exported="false"
             android:grantUriPermissions="true">
             <meta-data
@@ -55,4 +55,7 @@
     <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
     <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
     <uses-permission android:name="android.permission.ACCESS_LOCATION_EXTRA_COMMANDS" />
+    <!-- Geolocation Plugin -->
+    <uses-feature android:name="android.hardware.location.gps"
+        android:required="false" />
 </manifest>
