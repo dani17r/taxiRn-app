@@ -114,7 +114,7 @@ const copyToClipboard = (text: string) => {
         type: 'positive',
         message: 'Copiado al portapapeles',
         timeout: 1000,
-        position: 'top',
+        position: 'top-right',
       })
     })
     .catch((err) => {

@@ -175,6 +175,7 @@ const sendContract = async () => {
     return $q.notify({
         type: 'negative',
         message: `Porfavor completa los campos.`,
+        position: 'top-right',
       })
   }
   try {
@@ -192,6 +193,7 @@ const sendContract = async () => {
        $q.notify({
         type: 'positive',
         message: `Contrato enviado para ${props.driver?.fullname}`,
+        position: 'top-right',
       })
 
       $q.dialog({
@@ -208,6 +210,7 @@ const sendContract = async () => {
      $q.notify({
     type: 'negative',
     message: error.message,
+    position: 'top-right',
   })
   }
 

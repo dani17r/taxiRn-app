@@ -2,10 +2,10 @@
   <div>
     <div class="text-h6 q-mb-md">Información del Contrato</div>
     <div v-if="contract" class="q-gutter-y-sm">
-      <div><strong>ID:</strong> {{ contract.id.slice(0, 8) }}</div>
+      <div><strong>ID:</strong> {{ contract.id_contract?.toString().slice(8) }}</div>
       <div><strong>Servicio:</strong> {{ translateServiceType(contract.service_type) }}</div>
       <div><strong>Estado:</strong> {{ translateStatus(contract.status) }}</div>
-      <div><strong>Fecha:</strong> {{ formatDate(contract.created_at) }}</div>
+      <div><strong>Fecha:</strong> {{ formatDate(String(contract.created_at)) }}</div>
     </div>
     <div v-else class="text-grey-6">
       Cargando detalles del contrato...
@@ -16,13 +16,13 @@
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
 import { supabase } from '@services/supabase.services'
-import type { Contract } from '@interfaces/payment'
+import type { ContractI } from '@interfaces/contract'
 
 const props = defineProps<{
   contractId: string
 }>()
 
-const contract = ref<Contract | null>(null)
+const contract = ref<ContractI | null>(null)
 
 const fetchContract = async () => {
   try {
@@ -33,7 +33,7 @@ const fetchContract = async () => {
       .single()
 
     if (error) throw error
-    contract.value = data as Contract
+    contract.value = data as ContractI
   } catch (error) {
     console.error('Error loading contract:', error)
   }

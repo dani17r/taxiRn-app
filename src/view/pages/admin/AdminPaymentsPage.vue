@@ -33,16 +33,28 @@
       @verify="verifyPayment"
       @reject="rejectPayment"
     />
+    <DraggableButton
+      v-if="payments.length"
+      :initialX="90"
+      :initialY="87"
+      color="yellow-9"
+      icon="restart_alt"
+      :offsetTopPx="50" 
+      :offsetBottomPx="65"
+      size="md"
+      @click="fetchPayments"
+    />
   </q-page>
 </template>
 
 <script setup lang="ts">
+import PaymentAdminDialog from '@modules/admin/payment/PaymentAdminDialog.vue'
+import AdminPaymentsList from '@modules/admin/payment/AdminPaymentsList.vue'
+import DraggableButton from '@components/DroggableButton.vue'
+import type { PaymentWithShipT } from '@interfaces/payment'
+import { supabase } from '@services/supabase.services'
 import { ref, computed, onMounted } from 'vue'
 import { useQuasar } from 'quasar'
-import { supabase } from '@services/supabase.services'
-import AdminPaymentsList from '@modules/admin/payment/AdminPaymentsList.vue'
-import PaymentAdminDialog from '@modules/admin/payment/PaymentAdminDialog.vue'
-import type { PaymentWithShipT } from '@interfaces/payment'
 
 const $q = useQuasar()
 const loading = ref(false)
@@ -86,6 +98,7 @@ const fetchPayments = async () => {
       type: 'negative',
       message: 'Error al cargar pagos',
       caption: error instanceof Error ? error.message : 'Error desconocido',
+      position: 'top-right',
     })
   } finally {
     loading.value = false
@@ -98,13 +111,14 @@ const verifyPayment = async (paymentId: string) => {
     loading.value = true
     await updatePaymentStatus(paymentId, 'completed')
     await updateContractStatus(paymentId, 'completed')
-    $q.notify({ type: 'positive', message: 'Pago verificado correctamente' })
+    $q.notify({ type: 'positive', message: 'Pago verificado correctamente', position: 'top-right', })
     await fetchPayments()
   } catch (error) {
     $q.notify({
       type: 'negative',
       message: 'Error al verificar pago',
       caption: error instanceof Error ? error.message : 'Error desconocido',
+      position: 'top-right',
     })
   } finally {
     loading.value = false
@@ -117,13 +131,14 @@ const rejectPayment = async (paymentId: string) => {
     loading.value = true
     await updatePaymentStatus(paymentId, 'cancelled')
     await updateContractStatus(paymentId, 'cancelled')
-    $q.notify({ type: 'positive', message: 'Pago rechazado correctamente' })
+    $q.notify({ type: 'positive', message: 'Pago rechazado correctamente', position: 'top-right', })
     await fetchPayments()
   } catch (error) {
     $q.notify({
       type: 'negative',
       message: 'Error al rechazar pago',
       caption: error instanceof Error ? error.message : 'Error desconocido',
+      position: 'top-right',
     })
   } finally {
     loading.value = false

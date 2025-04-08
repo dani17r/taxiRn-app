@@ -216,6 +216,7 @@ const fetchDrivers = async (page: number, itemsPerPage = 10) => {
       type: 'negative',
       message: 'Error al cargar conductores',
       caption: (error as Error).message,
+      position: 'top-right',
     })
   } finally {
     isLoading.value = false
@@ -260,6 +261,7 @@ const deleteDriver = (driver: DriverT) => {
       $q.notify({
         type: 'positive',
         message: 'Conductor eliminado exitosamente',
+        position: 'top-right',
       })
 
       fetchDrivers(currentPage.value, 10).catch(() => {})
@@ -269,6 +271,7 @@ const deleteDriver = (driver: DriverT) => {
       $q.notify({
         type: 'negative',
         message: error.message,
+        position: 'top-right',
       })
     }
   })
@@ -290,6 +293,7 @@ const blockDriver = (driverId: string) => {
     $q.notify({
       type: 'positive',
       message: 'Conductor bloqueado exitosamente',
+      position: 'top-right',
     })
     fetchDrivers(currentPage.value, 10).catch(() => {})
   })
@@ -311,6 +315,7 @@ const unblockDriver = (driverId: string) => {
     $q.notify({
       type: 'positive',
       message: 'Conductor desbloqueado exitosamente',
+      position: 'top-right',
     })
 
     fetchDrivers(currentPage.value, 10).catch(() => {})

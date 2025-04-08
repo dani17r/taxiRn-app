@@ -12,7 +12,7 @@
           Ref: {{ payment.transaction_id }}
         </q-item-label>
         <q-item-label caption>
-          Contrato: {{ payment.contract_id.slice(0, 8) }} | 
+          Contrato: {{ payment.contract?.id_contract?.toString().slice(8) }} | 
           Método: {{ payment.payment_method }}
         </q-item-label>
         <q-item-label caption>
@@ -42,10 +42,10 @@
 
 <script setup lang="ts">
 import PaymentStatusBadge from '@modules/payment/PaymentStatusBadge.vue'
-import type { Payment } from '@interfaces/payment'
+import type { PaymentWithShipT } from '@interfaces/payment'
 
 defineProps<{
-  payments: Payment[]
+  payments: PaymentWithShipT[]
   loading: boolean
 }>()
 

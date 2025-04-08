@@ -189,6 +189,7 @@ async function fetchAdmins(page: number, itemsPerPage = 10) {
       type: 'negative',
       message: 'Error al cargar administradores',
       caption: error.message,
+      position: 'top-right',
     })
   } finally {
     isLoading.value = false
@@ -213,6 +214,7 @@ const deleteAdmin = (p_user_id: string) => {
       $q.notify({
         type: 'positive',
         message: 'Administrador eliminado correctamente',
+        position: 'top-right',
       })
 
       fetchAdmins(currentPage.value, 10).catch(() => {})
@@ -222,6 +224,7 @@ const deleteAdmin = (p_user_id: string) => {
         type: 'negative',
         message: 'Error al eliminar administrador',
         caption: error.message,
+        position: 'top-right',
       })
     }
   })
@@ -246,6 +249,7 @@ const blockAdmin = (adminId: string) => {
       $q.notify({
         type: 'positive',
         message: 'Administrador bloqueado correctamente',
+        position: 'top-right',
       })
 
       fetchAdmins(currentPage.value, 10).catch(() => {})
@@ -255,6 +259,7 @@ const blockAdmin = (adminId: string) => {
         type: 'negative',
         message: 'Error al bloquear administrador',
         caption: error.message,
+        position: 'top-right',
       })
     }
   })
@@ -279,6 +284,7 @@ const unblockAdmin = (adminId: string) => {
       $q.notify({
         type: 'positive',
         message: 'Administrador desbloqueado correctamente',
+        position: 'top-right',
       })
 
       fetchAdmins(currentPage.value, 10).catch(() => {})
@@ -288,6 +294,7 @@ const unblockAdmin = (adminId: string) => {
         type: 'negative',
         message: 'Error al desbloquear administrador',
         caption: error.message,
+        position: 'top-right',
       })
     }
   })

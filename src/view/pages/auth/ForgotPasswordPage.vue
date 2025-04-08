@@ -84,13 +84,15 @@ const handleForgotPassword = async () => {
     
     $q.notify({
       type: 'positive',
-      message: 'Código enviado a tu correo'
+      message: 'Código enviado a tu correo',
+      position: 'top-right',
     });
     
   } catch (error) {
     $q.notify({
       type: 'negative',
-      message: error instanceof Error ? error.message : 'Error al enviar el código'
+      message: error instanceof Error ? error.message : 'Error al enviar el código',
+      position: 'top-right',
     });
   } finally {
     loading.value = false;

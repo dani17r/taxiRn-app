@@ -5,28 +5,27 @@
     </div>
     <q-scroll-area style="height: 90vh; width: 100%" class="pb-30">
       <div class="q-pa-md">
-
         <!-- Estadísticas Rápidas -->
         <div class="row">
-            <div class="col-6 col-sm-6 col-md-3 p-1 md:p-0">
-              <q-card class="text-white bg-blue-8 !shadow-none">
-                <q-card-section>
-                  <div class="text-lg">Usuarios Totales</div>
-                  <div class="text-h4 q-mt-sm">{{ stats.totalUsersRoleUser }}</div>
-                  <q-icon name="people" class="absolute top-1 right-2" size="lg" />
-                </q-card-section>
-              </q-card>
-            </div>
-  
-            <div class="col-6 col-sm-6 col-md-3 p-1 md:p-0">
-              <q-card class="text-white bg-green-8 !shadow-none">
-                <q-card-section>
-                  <div class="text-lg">Conductores Activos</div>
-                  <div class="text-h4 q-mt-sm">{{ stats.activeDrivers }}</div>
-                  <q-icon name="directions_car" class="absolute top-1 right-2" size="lg" />
-                </q-card-section>
-              </q-card>
-            </div>
+          <div class="col-6 col-sm-6 col-md-3 p-1 md:p-0">
+            <q-card class="text-white bg-blue-8 !shadow-none">
+              <q-card-section>
+                <div class="text-lg">Usuarios Totales</div>
+                <div class="text-h4 q-mt-sm">{{ stats.totalUsersRoleUser }}</div>
+                <q-icon name="people" class="absolute top-1 right-2" size="lg" />
+              </q-card-section>
+            </q-card>
+          </div>
+
+          <div class="col-6 col-sm-6 col-md-3 p-1 md:p-0">
+            <q-card class="text-white bg-green-8 !shadow-none">
+              <q-card-section>
+                <div class="text-lg">Conductores Activos</div>
+                <div class="text-h4 q-mt-sm">{{ stats.activeDrivers }}</div>
+                <q-icon name="directions_car" class="absolute top-1 right-2" size="lg" />
+              </q-card-section>
+            </q-card>
+          </div>
 
           <div class="col-6 col-sm-6 col-md-3 p-1 md:p-0">
             <q-card class="text-white bg-orange-8 !shadow-none">
@@ -62,7 +61,9 @@
                   </q-item-section>
                   <q-item-section>
                     <q-item-label>{{ user.fullname }}</q-item-label>
-                    <q-item-label caption>Registrado hace {{ timeAgo(user.created_at) }}</q-item-label>
+                    <q-item-label caption
+                      >Registrado hace {{ timeAgo(user.created_at) }}</q-item-label
+                    >
                   </q-item-section>
                 </q-item>
               </q-list>
@@ -71,33 +72,47 @@
         </div>
       </div>
     </q-scroll-area>
+
+    <DraggableButton
+      v-if="latestUsers.length"
+      :initialX="90"
+      :initialY="87"
+      color="yellow-9"
+      icon="restart_alt"
+      :offsetTopPx="50"
+      :offsetBottomPx="65"
+      size="md"
+      @click="resetAll"
+    />
   </q-page>
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted } from 'vue';
-import { supabase } from '@services/supabase.services';
-import { formatDistanceToNow } from 'date-fns';
-import { es } from 'date-fns/locale';
-import { getInitials } from '@utils/actions';
+import DraggableButton from '@components/DroggableButton.vue'
+import { supabase } from '@services/supabase.services'
+import { formatDistanceToNow } from 'date-fns'
+import { getInitials } from '@utils/actions'
+import { ref, onMounted } from 'vue'
+import { es } from 'date-fns/locale'
+import { Loading } from 'quasar'
 
 const stats = ref({
   totalUsers: 0,
   activeDrivers: 0,
   totalUsersRoleUser: 0,
   totalUsersRoleAdmin: 0,
-  totalUsersRoleDriver: 0
-});
+  totalUsersRoleDriver: 0,
+})
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-const latestUsers = ref<any[]>([]);
+const latestUsers = ref<any[]>([])
 
 const timeAgo = (dateString: string) => {
   return formatDistanceToNow(new Date(dateString), {
     addSuffix: true,
-    locale: es
-  });
-};
+    locale: es,
+  })
+}
 
 const fetchStats = async () => {
   try {
@@ -106,26 +121,26 @@ const fetchStats = async () => {
       .from('users')
       .select('*', { count: 'exact', head: true })
       .is('deleted_at', null)
-    
+
     // Conductores activos (usuarios con vehículos activos)
     const { count: activeDrivers } = await supabase
       .from('vehicles')
       .select('user_id', { count: 'exact', head: true })
-      .eq('is_active', true);
+      .eq('is_active', true)
 
     // Usuarios con rol "user"
     const { count: totalUsersRoleUser } = await supabase
       .from('users')
       .select('*', { count: 'exact', head: true })
       .eq('role', 'user')
-      .is('deleted_at', null) 
+      .is('deleted_at', null)
 
     // Usuarios con rol "driver"
     const { count: totalUsersRoleDriver } = await supabase
       .from('users')
       .select('*', { count: 'exact', head: true })
       .eq('role', 'driver')
-      .is('deleted_at', null) 
+      .is('deleted_at', null)
 
     const { count: totalUsersRoleAdmin } = await supabase
       .from('users')
@@ -138,12 +153,12 @@ const fetchStats = async () => {
       activeDrivers: activeDrivers || 0,
       totalUsersRoleUser: totalUsersRoleUser || 0,
       totalUsersRoleAdmin: totalUsersRoleAdmin || 0,
-      totalUsersRoleDriver: totalUsersRoleDriver || 0
-    };
+      totalUsersRoleDriver: totalUsersRoleDriver || 0,
+    }
   } catch (error) {
-    console.error('Error fetching stats:', error);
+    console.error('Error fetching stats:', error)
   }
-};
+}
 
 const fetchLatestUsers = async () => {
   try {
@@ -152,18 +167,25 @@ const fetchLatestUsers = async () => {
       .select('*')
       .is('deleted_at', null)
       .order('created_at', { ascending: false })
-      .limit(5);
+      .limit(5)
 
     if (data) {
       latestUsers.value = data
     }
   } catch (error) {
-    console.error('Error fetching latest users:', error);
+    console.error('Error fetching latest users:', error)
   }
-};
+}
 
-onMounted(async() => {
-  await fetchStats();
-  await fetchLatestUsers();
-});
+const resetAll = async () => {
+  Loading.show()
+  await fetchStats()
+  await fetchLatestUsers()
+   Loading.hide()
+}
+
+onMounted(async () => {
+  await fetchStats()
+  await fetchLatestUsers()
+})
 </script>

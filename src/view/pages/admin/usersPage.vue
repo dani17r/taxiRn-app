@@ -162,6 +162,7 @@ async function fetchusers(page: number, itemsPerPage = 10) {
       type: 'negative',
       message: 'Error al cargar usuarios',
       caption: error.message,
+      position: 'top-right',
     })
   } finally {
     isLoading.value = false
@@ -186,6 +187,7 @@ const deleteUser = (p_user_id: string) => {
       $q.notify({
         type: 'positive',
         message: 'Usuario eliminado correctamente',
+        position: 'top-right',
       })
 
       fetchusers(currentPage.value, 10).catch(() => {})
@@ -195,6 +197,7 @@ const deleteUser = (p_user_id: string) => {
         type: 'negative',
         message: 'Error al eliminar usuario',
         caption: error.message,
+        position: 'top-right',
       })
     }
   })
@@ -219,6 +222,7 @@ const blockUser = (userId: string) => {
       $q.notify({
         type: 'positive',
         message: 'Usuario bloqueado correctamente',
+        position: 'top-right',
       })
 
       fetchusers(currentPage.value, 10).catch(() => {})
@@ -228,6 +232,7 @@ const blockUser = (userId: string) => {
         type: 'negative',
         message: 'Error al bloquear usuario',
         caption: error.message,
+        position: 'top-right',
       })
     }
   })
@@ -252,6 +257,7 @@ const unblockUser = (userId: string) => {
       $q.notify({
         type: 'positive',
         message: 'Usuario desbloqueado correctamente',
+        position: 'top-right',
       })
 
       fetchusers(currentPage.value, 10).catch(() => {})
@@ -261,6 +267,7 @@ const unblockUser = (userId: string) => {
         type: 'negative',
         message: 'Error al desbloquear usuario',
         caption: error.message,
+        position: 'top-right',
       })
     }
   })

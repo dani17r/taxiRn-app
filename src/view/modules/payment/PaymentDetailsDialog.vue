@@ -28,12 +28,12 @@ import PaymentInfoSection from '@modules/payment/PaymentInfoSection.vue'
 import ContractInfoSection from '@modules/payment/ContractInfoSection.vue'
 import UserInfoSection from '@modules/payment/UserInfoSection.vue'
 import PaymentProofSection from '@modules/payment/PaymentProofSection.vue'
-import type { Payment } from '@interfaces/payment'
+import type { PaymentWithShipT } from '@interfaces/payment'
 
 const modelValue = defineModel('modelValue', { default: false })
 
 defineProps<{
-  payment: Payment | null
+  payment: PaymentWithShipT | null
 }>()
 
 defineEmits(['update:modelValue'])

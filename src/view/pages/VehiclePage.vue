@@ -147,12 +147,14 @@ const handleImageUpload = async (file: File) => {
       type: 'positive',
       message: 'Imagen actualizada correctamente',
       icon: 'check_circle',
+      position: 'top-right',
     })
   } catch (error) {
     Notify.create({
       type: 'negative',
       message: `Error: ${error instanceof Error ? error.message : 'Error desconocido'}`,
       icon: 'error',
+      position: 'top-right',
     })
     console.error('Error detallado:', error)
   } finally {

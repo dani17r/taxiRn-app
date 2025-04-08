@@ -68,7 +68,8 @@ const handleResetPassword = async () => {
         
         $q.notify({
           type: 'positive',
-          message: 'Contraseña actualizada exitosamente!'
+          message: 'Contraseña actualizada exitosamente!',
+          position: 'top-right',
         });
          
         await router.push('/login');
@@ -78,7 +79,8 @@ const handleResetPassword = async () => {
   } catch (error) {
     $q.notify({
       type: 'negative',
-      message: error instanceof Error ? error.message : 'Error al actualizar la contraseña'
+      message: error instanceof Error ? error.message : 'Error al actualizar la contraseña',
+      position: 'top-right',
     });
   } finally {
     loading.value = false;

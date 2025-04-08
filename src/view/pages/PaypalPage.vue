@@ -36,24 +36,36 @@
       :payment="selectedPayment"
       v-if="selectedPayment"
     />
+     <DraggableButton
+      v-if="payments.length"
+      :initialX="90"
+      :initialY="87"
+      color="yellow-9"
+      icon="restart_alt"
+      :offsetTopPx="50" 
+      :offsetBottomPx="65"
+      size="md"
+      @click="fetchPayments"
+    />
   </q-page>
 </template>
 
 <script setup lang="ts">
 import PaymentDetailsDialog from '@modules/payment/PaymentDetailsDialog.vue'
 import PaymentListItems from '@modules/payment/PaymentListItems.vue'
+import DraggableButton from '@components/DroggableButton.vue'
 import { supabase } from '@services/supabase.services'
 import useSuperComposable from '@composables/super'
-import type { Payment } from '@interfaces/payment'
+import type { PaymentWithShipT } from '@interfaces/payment'
 import { ref, computed, onMounted } from 'vue'
 
 const { store } = useSuperComposable()
 const loading = ref(false)
-const payments = ref<Payment[]>([])
+const payments = ref<PaymentWithShipT[]>([])
 const currentPage = ref(1)
 const itemsPerPage = ref(10)
 const showDetailsDialog = ref(false)
-const selectedPayment = ref<Payment | null>(null)
+const selectedPayment = ref<PaymentWithShipT | null>(null)
 
 const fetchPayments = async () => {
   try {
@@ -65,6 +77,7 @@ const fetchPayments = async () => {
       .select(
         `
         *, 
+        contract_vehicle:contracts!contract_id (vehicle_id),
         contract:contracts!contract_id (*)
       `,
       )
@@ -74,7 +87,7 @@ const fetchPayments = async () => {
       query = query.eq('user_id', store.auth.current?.id)
     }
     if (store.auth.getRoleDriver) {
-      query = query.eq('contract.vehicle_id', store.auth.current?.id)
+      query = query.eq('contract_vehicle.vehicle_id', store.auth.current?.id)
     } else if (store.auth.getRoleAdmin) {
       query = query.eq('user_id', store.auth.current?.id)
     }
@@ -82,7 +95,7 @@ const fetchPayments = async () => {
     const { data, error } = await query
 
     if (error) throw error
-    payments.value = data as Payment[]
+    payments.value = data as PaymentWithShipT[]
   } catch (error) {
     console.error('Error loading payments:', error)
   } finally {
@@ -90,7 +103,7 @@ const fetchPayments = async () => {
   }
 }
 
-const showPaymentDetails = (payment: Payment) => {
+const showPaymentDetails = (payment: PaymentWithShipT) => {
   selectedPayment.value = payment
   showDetailsDialog.value = true
 }

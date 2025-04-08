@@ -129,7 +129,8 @@ const showRoute = async (routeId: string) => {
     console.error('Error al mostrar ruta:', error);
     $q.notify({
       type: 'negative',
-      message: 'Error al cargar la ruta en el mapa'
+      message: 'Error al cargar la ruta en el mapa',
+      position: 'top-right',
     });
     
     // Mostrar mapa vacío como fallback
@@ -162,7 +163,8 @@ const showLocation = async (locationId: string) => {
     console.error('Error al mostrar ubicación:', error);
     $q.notify({
       type: 'negative',
-      message: 'Error al cargar la ubicación en el mapa'
+      message: 'Error al cargar la ubicación en el mapa',
+       position: 'top-right',
     });
     
     // Mostrar mapa vacío como fallback

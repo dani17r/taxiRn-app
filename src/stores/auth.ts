@@ -86,12 +86,24 @@ export const useAuthStore = defineStore('authStore', {
               .eq('user_id', dataAuth.user?.id)
               .then(({ data: dataUser, error }) => {
                 if (error) return notify.errorCatch(error) // Use errorCatch
-                if (action) action(dataUser[0] as unknown as UserI)
-                this.current = dataUser[0] as unknown as UserI
+                if (action) action(dataUser[0] as UserI)
+                this.current = dataUser[0] as UserI
               })
           }
         })
       }
+    },
+
+    async getSimpleUser() {
+      await supabase
+        .from('users')
+        .select()
+        .eq('id', this.current?.id)
+        .single()
+        .then(({ data, error }) => {
+          if (error) return notify.errorCatch(error)
+          this.current = data as UserI
+        })
     },
 
     //update user

@@ -187,6 +187,7 @@ const deleteAllRoutes = async () => {
       message: 'Todas las rutas han sido eliminadas.',
       type: 'positive',
       icon: 'delete_forever',
+      position: 'top-right',
     })
   } catch (error) {
     console.error('Error deleting all routes:', error)
@@ -194,6 +195,7 @@ const deleteAllRoutes = async () => {
       message: `Error al eliminar rutas: ${error instanceof Error ? error.message : 'Error desconocido'}`,
       type: 'negative',
       icon: 'warning',
+      position: 'top-right',
     })
   } finally {
     Loading.hide()
@@ -202,7 +204,7 @@ const deleteAllRoutes = async () => {
 
 const validateAndSave = async () => {
   if (!title.value) {
-    $q.notify({ message: 'Por favor, ingresa un nombre para la ruta.', type: 'warning' })
+    $q.notify({ message: 'Por favor, ingresa un nombre para la ruta.', type: 'warning',  position: 'top-right', })
     return
   }
 

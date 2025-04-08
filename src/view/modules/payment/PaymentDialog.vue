@@ -2,7 +2,7 @@
   <q-dialog v-model="visible" persistent>
     <q-card style="min-width: 300px" class="bg-one !shadow-none">
       <q-card-section>
-        <div class="text-h6">Procesar Pago - Contrato N° {{ contractNumberId.slice(0, 8) }}</div>
+        <div class="text-h6">Procesar Pago - Contrato N° {{ contractNumberId.slice(8) }}</div>
       </q-card-section>
 
       <q-card-section class="q-pt-none">
@@ -172,8 +172,9 @@ const confirmPayment = async () => {
 
     $q.notify({
       type: 'positive',
-      message: `Pago registrado para contrato ${props.contractId.slice(0, 8)}`,
-      caption: `Referencia: ${transactionId.value} - Monto: $${props.amount.toFixed(2)}`
+      message: `Pago registrado para contrato ${props.contractId.slice(8)}`,
+      caption: `Referencia: ${transactionId.value} - Monto: $${props.amount.toFixed(2)}`,
+       position: 'top-right',
     })
 
     visible.value = false
@@ -183,7 +184,8 @@ const confirmPayment = async () => {
     $q.notify({
       type: 'negative',
       message: 'Error al procesar pago',
-      caption: error.message
+      caption: error.message,
+       position: 'top-right',
     })
   } finally {
     loading.value = false
@@ -192,15 +194,15 @@ const confirmPayment = async () => {
 
 const validateFields = () => {
   if (!paymentMethod.value) {
-    $q.notify({ type: 'warning', message: 'Seleccione un método de pago' })
+    $q.notify({ type: 'warning', message: 'Seleccione un método de pago', position: 'top-right', })
     return false
   }
   if (!transactionId.value || transactionId.value.length !== 5) {
-    $q.notify({ type: 'warning', message: 'Ingrese un número de referencia válido (5 dígitos)' })
+    $q.notify({ type: 'warning', message: 'Ingrese un número de referencia válido (5 dígitos)', position: 'top-right', })
     return false
   }
   if (!image.value) {
-    $q.notify({ type: 'warning', message: 'Suba un comprobante de pago' })
+    $q.notify({ type: 'warning', message: 'Suba un comprobante de pago', position: 'top-right',})
     return false
   }
   return true

@@ -2,7 +2,7 @@
   <div>
     <div class="text-h6 q-mb-md">Información del Contrato</div>
     <div v-if="contract" class="q-gutter-y-sm">
-      <div><strong>ID:</strong> {{ contract.id_contract?.toString().slice(0,8) }}</div>
+      <div><strong>ID:</strong> {{ contract.id_contract?.toString().slice(8) }}</div>
       <div><strong>Servicio:</strong> {{ translateServiceType(contract.service_type) }}</div>
       <div><strong>Estado:</strong> <PaymentStatusBadge :status="contract.status" /></div>
       <div><strong>Precio:</strong> ${{ contract.price?.toFixed(2) || '0.00' }}</div>

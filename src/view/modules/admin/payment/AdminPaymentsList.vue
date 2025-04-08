@@ -13,7 +13,7 @@
             Ref: {{ payment.transaction_id }}
           </q-item-label>
           <q-item-label caption>
-            Contrato: {{ payment.contract?.id_contract?.toString().slice(0,8) }} | 
+            Contrato: {{ payment.contract?.id_contract?.toString().slice(8) }} | 
             Método: {{ payment.payment_method }}
           </q-item-label>
           <q-item-label caption>

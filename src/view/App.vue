@@ -28,6 +28,7 @@ supabase
         caption: payload.new.description,
         color: 'primary',
         icon: 'assignment',
+         position: 'top-right',
       });
     }
   )

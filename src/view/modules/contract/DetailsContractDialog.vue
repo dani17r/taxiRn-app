@@ -5,13 +5,18 @@
         class="bg-yellow-9 text-white"
         style="position: fixed; top: 0; left: 0; right: 0; z-index: 1"
       >
-        <q-toolbar-title> Detalles del Contrato N° {{ contract?.id_contract?.toString().slice(0, 8) }} </q-toolbar-title>
+        <q-toolbar-title>
+          Detalles del Contrato N° {{ contract?.id_contract?.toString().slice(8) }}
+        </q-toolbar-title>
         <q-btn flat round dense icon="close" v-close-popup />
       </q-toolbar>
 
       <div style="margin-top: 50px; overflow-y: auto; max-height: calc(100vh - 90px)">
         <q-card-section class="q-pa-none" style="height: calc(90vh - 250px)">
-          <ViewMapSample :route-id="String(contract.route_id)" :location-id="String(contract.location_id)" />
+          <ViewMapSample
+            :route-id="String(contract.route_id)"
+            :location-id="String(contract.location_id)"
+          />
         </q-card-section>
 
         <q-card-section class="mx-5">
@@ -35,12 +40,17 @@
               <div v-if="contract?.client?.phone">
                 <strong>Teléfono:</strong> {{ '04' + contract.client.phone }}
               </div>
+              <div>
+                <strong>Descripcion del cliente:</strong> {{ contract.description }}
+              </div>
             </template>
 
             <!-- Detalles del servicio -->
             <div class="text-h6 q-mt-md">Detalles del Servicio</div>
             <div><strong>Tipo:</strong> {{ translateServiceType(contract?.service_type) }}</div>
-            <div><strong>Fecha/Hora:</strong> {{ formatFullDate(String(contract?.created_at)) }}</div>
+            <div>
+              <strong>Fecha/Hora:</strong> {{ formatFullDate(String(contract?.created_at)) }}
+            </div>
 
             <!-- Ruta o Ubicación -->
             <div v-if="contract?.route">
@@ -116,7 +126,7 @@
                   label="Tiempo estimado en llegar"
                   v-model="estimated_time"
                   :rules="[required]"
-                   color="yellow-9"
+                  color="yellow-9"
                   class="w-full"
                   outlined
                   dense
@@ -164,7 +174,7 @@ import type { ContractWithShipT } from '@interfaces/contract'
 const { store } = useSuperComposable()
 const $q = useQuasar()
 
-const props = defineProps<{ modelValue:boolean, contract: ContractWithShipT}>()
+const props = defineProps<{ modelValue: boolean; contract: ContractWithShipT }>()
 
 const emit = defineEmits(['update:modelValue', 'update'])
 
@@ -215,6 +225,7 @@ const acceptService = async () => {
     $q.notify({
       type: 'positive',
       message: 'Servicio aceptado correctamente',
+      position: 'top-right',
     })
 
     emit('update')
@@ -225,6 +236,7 @@ const acceptService = async () => {
       type: 'negative',
       message: 'Error al aceptar servicio',
       caption: (err as Error).message,
+      position: 'top-right',
     })
   }
 }
@@ -234,41 +246,39 @@ const rejectService = () => {
   try {
     const action = async () => {
       const { error } = await supabase
-          .from('contracts')
-          .update({
-            status: 'cancelled',
-            updated_at: new Date().toISOString(),
-          })
-          .eq('id', props.contract.id)
-  
-        if (error) throw error
-  
-        $q.notify({
-          type: 'positive',
-          message: 'Servicio rechazado correctamente',
+        .from('contracts')
+        .update({
+          status: 'cancelled',
+          updated_at: new Date().toISOString(),
         })
-  
-        emit('update')
-        visible.value = false
-    }
-    $q.dialog({
-        title: 'Confirmar Rechazo',
-        message: '¿Estás seguro de que deseas rechazar este servicio?',
-        cancel: true,
-        persistent: true,
-        color: 'negative',
-      })
-      .onOk(() => {
-        void action()
+        .eq('id', props.contract.id)
+
+      if (error) throw error
+
+      $q.notify({
+        type: 'positive',
+        message: 'Servicio rechazado correctamente',
+        position: 'top-right',
       })
 
-    
-    
+      emit('update')
+      visible.value = false
+    }
+    $q.dialog({
+      title: 'Confirmar Rechazo',
+      message: '¿Estás seguro de que deseas rechazar este servicio?',
+      cancel: true,
+      persistent: true,
+      color: 'negative',
+    }).onOk(() => {
+      void action()
+    })
   } catch (err) {
     $q.notify({
       type: 'negative',
       message: 'Error al rechazar servicio',
       caption: (err as Error).message,
+      position: 'top-right',
     })
   }
 }

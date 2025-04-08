@@ -22,6 +22,7 @@ export default () => ({
   success: (data: NotifyI['SuccessI']) =>
     Notify.create({
       type: 'positive',
+      position: 'top-right',
       message: data.message,
       onDismiss: () => data.ok && data.ok(),
     }),

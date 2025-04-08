@@ -8,7 +8,7 @@
       icon="close"
       class="fixed bottom-32 right-3 z-1000"
       @click="dialogs.resetMap.togle()"
-      :disable="!isLocation && !isRoute || !isStateLocation"
+      :disable="!isLocation && !isRoute && !isEndPos"
     />
 
     <q-btn
@@ -46,15 +46,15 @@
 import MenuDialogsOptionsMap from '@modules/map/MenuDialogsOptionsMap.vue'
 import useLocationComposable from '@composables/map/useLocation'
 import useRouteComposable from '@composables/map/useRoute'
-import useMapStateComposable from '@composables/map/state'
+// import useMapStateComposable from '@composables/map/state'
 import useMapComposable from '@composables/map/main'
 import useTabsComposable from '@composables/tabs'
 import { onMounted, reactive } from 'vue'
 
 const { tabs } = useTabsComposable()
 const { getCurrentLocation, disbleButtonLocation } = useLocationComposable()
-const { initMap, resetMap, isLocation, } = useMapComposable()
-const { isStateLocation } = useMapStateComposable()
+const { initMap, resetMap, isLocation, isEndPos } = useMapComposable()
+// const { isStateLocation } = useMapStateComposable()
 const { isRoute } = useRouteComposable()
 
 const dialogs = reactive({

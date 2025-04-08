@@ -38,6 +38,7 @@ export default () => {
       Notify.create({
         type: 'negative',
         message: `${error instanceof Error ? error.message : 'Unknown error'}`,
+        position: 'top-right',
       })
     }
   }
@@ -57,7 +58,11 @@ export default () => {
 
       if (error) {
         console.error('Error loading routes:', error)
-        Notify.create({ type: 'negative', message: `Failed to load routes: ${error.message}` })
+        Notify.create({
+          type: 'negative',
+          message: `Failed to load routes: ${error.message}`,
+          position: 'top-right',
+        })
         route.data = []
         return
       }
@@ -95,6 +100,7 @@ export default () => {
       Notify.create({
         type: 'negative',
         message: `Failed to load routes: ${error instanceof Error ? error.message : 'Unknown error'}`,
+        position: 'top-right',
       })
       route.data = []
     }
@@ -152,13 +158,15 @@ export default () => {
           message: 'Ruta guardada con exito',
           icon: 'check',
           type: 'positive',
+          position: 'top-right',
         })
       }
     } catch (error) {
       console.error('Error saving route:', error)
       Notify.create({
         type: 'negative',
-        message: `Error saving route: ${error instanceof Error ? error.message : 'Unknown error'}`,
+        message: `Error saving route: ${error instanceof Error ? error.message : 'Unknown error'},`,
+        position: 'top-right',
       })
     }
   }
@@ -172,7 +180,11 @@ export default () => {
 
     if (error) {
       console.error('Error deleting route:', error)
-      Notify.create({ type: 'negative', message: `Error deleting route: ${error.message}` })
+      Notify.create({
+        type: 'negative',
+        message: `Error deleting route: ${error.message}`,
+        position: 'top-right',
+      })
       return
     }
 
@@ -187,6 +199,7 @@ export default () => {
       message: 'Ruta Eliminada con existo',
       icon: 'check',
       type: 'positive',
+      position: 'top-right',
     })
   }
 

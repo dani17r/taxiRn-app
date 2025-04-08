@@ -100,7 +100,7 @@ export const useVehicleStore = defineStore('vehicleStore', {
         return data
       } catch (error) {
         this.error = error instanceof Error ? error.message : 'Update failed'
-        $q.notify({ type: 'negative', message: this.error })
+        $q.notify({ type: 'negative', message: this.error, position: 'top-right' })
         throw error
       } finally {
         this.loading = false

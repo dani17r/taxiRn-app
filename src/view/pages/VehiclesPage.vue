@@ -154,12 +154,25 @@
       :driver="selectedDriver"
       @contract="openMapModal(selectedDriver)"
     />
+
+    <DraggableButton
+      v-if="drivers.length"
+      :initialX="90"
+      :initialY="87"
+      color="yellow-9"
+      icon="restart_alt"
+      size="md"
+      :offsetTopPx="50"
+      :offsetBottomPx="65" 
+      @click="fetchDrivers"
+    />
   </q-page>
 </template>
 
 <script setup lang="ts">
 import DialogContractDriver from '@modules/vehicle/DialogContractDriver.vue'
 import DialogViewDriver from '@modules/vehicle/DialogViewDriver.vue'
+import DraggableButton from '@components/DroggableButton.vue'
 import { ref, computed, watchEffect, reactive } from 'vue'
 import { supabase } from '@services/supabase.services'
 import useImagesComposable from '@composables/images'
@@ -210,7 +223,7 @@ const resetModal = () => {
 }
 
 const openMapModal = async (driver: DriverT) => {
-  await supabase.auth.getUser()
+  await store.auth.getSimpleUser()
   if (store.auth.isBlocked) {
     return $q.dialog({
       cancel: false,
@@ -230,7 +243,7 @@ const totalPages = computed(() => Math.ceil(totalDrivers.value / itemsPerPage.va
 
 // Observadores
 watchEffect(() => {
-  fetchDrivers().catch(() => null)
+  void fetchDrivers()
 })
 
 // Función para obtener conductores
@@ -260,6 +273,7 @@ async function fetchDrivers() {
       type: 'negative',
       message: 'Error al cargar conductores',
       caption: (error as Error).message,
+      position: 'top-right',
     })
   } finally {
     isLoading.value = false

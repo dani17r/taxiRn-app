@@ -12,7 +12,7 @@
           <q-item-section class="!w-full">
             <template v-if="store.auth.getRoleUser">
               <q-item-label
-                >N° contrato: {{ contract.id_contract?.toString().slice(0, 8) }}</q-item-label
+                >N° contrato: {{ contract.id_contract?.toString().slice(8) }}</q-item-label
               >
               <q-item-label class="text-lg"
                 >Conductor: {{ contract.vehicle?.user?.fullname }}
@@ -33,7 +33,7 @@
               <q-item-label class="text-caption"
                 >Fecha/Hora: {{ formatDate(String(contract.created_at)) }}</q-item-label
               >
-              <q-item-label class="absolute right-0 top-0">
+              <q-item-label class="absolute right-0 -top-3">
                 <q-chip class="" :color="getStatusColor(contract.status)">{{
                   translateStatus(contract.status)
                 }}</q-chip>
@@ -49,7 +49,7 @@
             </template>
             <template v-else>
               <q-item-label
-                >N° contrato: {{ contract.id_contract?.toString().slice(0, 8) }}</q-item-label
+                >N° contrato: {{ contract.id_contract?.toString().slice(8) }}</q-item-label
               >
               <q-item-label class="text-lg">Cliente: {{ contract.client?.fullname }}</q-item-label>
               <q-item-label class="text-caption"
@@ -67,7 +67,7 @@
               <q-item-label class="text-caption"
                 >Fecha/Hora: {{ formatDate(String(contract.created_at)) }}</q-item-label
               >
-              <q-item-label class="absolute right-0 top-0">
+              <q-item-label class="absolute right-0 -top-3">
                 <q-chip class="" :color="getStatusColor(contract.status)">{{
                   translateStatus(contract.status)
                 }}</q-chip>
@@ -149,11 +149,24 @@
       :created-at="String(selectedContract?.created_at)"
       @update="fetchContracts"
     />
+
+    <DraggableButton
+      v-if="contracts.length"
+      :initialX="90"
+      :initialY="87"
+      color="yellow-9"
+      icon="restart_alt"
+      :offsetTopPx="50" 
+      :offsetBottomPx="65"
+      size="md"
+      @click="fetchContracts"
+    />
   </q-page>
 </template>
 
 <script lang="ts" setup>
 import DetailsContractDialog from '@modules/contract/DetailsContractDialog.vue'
+import DraggableButton from '@components/DroggableButton.vue'
 import PaymentDialog from '@modules/payment/PaymentDialog.vue'
 import type { ContractWithShipT } from '@interfaces/contract'
 import { translateServiceType } from '@utils/servicesTypes'
@@ -263,6 +276,7 @@ const fetchContracts = async () => {
       type: 'negative',
       message: 'Error al cargar contratos',
       caption: (err as Error).message,
+      position: 'top-right',
     })
     contracts.value = []
   } finally {
@@ -291,7 +305,8 @@ const cancelContract = (contract: ContractWithShipT) => {
 
       $q.notify({
         type: 'positive',
-        message: `Contrato ${contract.id?.slice(0, 8)} cancelado correctamente`,
+        message: `Contrato ${contract.id?.slice(8)} cancelado correctamente`,
+        position: 'top-right',
       })
 
       // Actualizar lista
@@ -301,13 +316,14 @@ const cancelContract = (contract: ContractWithShipT) => {
         type: 'negative',
         message: 'Error al cancelar contrato',
         caption: (err as Error).message,
+        position: 'top-right',
       })
     }
   }
 
   $q.dialog({
     title: 'Confirmar Cancelación',
-    message: `¿Estás seguro de que deseas cancelar el contrato ${contract.id?.slice(0, 8)}?`,
+    message: `¿Estás seguro de que deseas cancelar el contrato ${contract.id?.slice(8)}?`,
     cancel: false,
     persistent: false,
     color: 'yellow-9',

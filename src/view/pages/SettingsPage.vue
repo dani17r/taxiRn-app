@@ -8,6 +8,7 @@
     <q-scroll-area style="height: 90vh; width: 100%" class="pb-10">
       <div class="flex justify-center px-8 w-full">
         <q-form
+          ref="formPassword"
           @submit.prevent="updatePassword"
           @reset="resetFormPassword"
           class="space-y-4 w-full mt-8"
@@ -71,6 +72,7 @@ import { required } from '@utils/validations';
 
 const { store } = useSuperComposable()
 
+const formPassword = ref()
 const currentPassword = ref('')
 const newPassword = ref('')
 const confirmPassword = ref('')
@@ -141,6 +143,7 @@ const updatePassword = async () => {
       Notify.create({
         type: 'positive',
         message: 'Contraseña actualizada correctamente',
+        position: 'top-right',
       })
     })
     .catch((error) => {
@@ -148,9 +151,13 @@ const updatePassword = async () => {
       Notify.create({
         type: 'negative',
         message: `Error al actualizar: ${error instanceof Error ? error.message : 'Error desconocido'}`,
+        position: 'top-right',
       })
     })
-    .finally(() => (passwordLoading.value = false))
+    .finally(() => {
+      passwordLoading.value = false
+      formPassword.value?.reset()
+    })
 }
 
 const resetFormPassword = () => {

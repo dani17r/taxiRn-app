@@ -55,6 +55,7 @@ export default () => {
     if (!map.value) return
 
     route.current = null
+    location.current = null
     if (type === 'start' && marker.start) {
       map.value.removeLayer(marker.start as unknown as L.Layer)
       marker.start = null

@@ -23,15 +23,27 @@ export default () => {
         permissions: ['location', 'coarseLocation'],
       })
       if (newPermission === 'denied') {
-        Notify.create({ type: 'negative', message: 'Location permission denied!' })
+        Notify.create({
+          type: 'negative',
+          message: 'Location permission denied!',
+          position: 'top-right',
+        })
         return false
       }
       if (newPermission === 'prompt') {
-        Notify.create({ type: 'info', message: 'Location permission is required!' })
+        Notify.create({
+          type: 'info',
+          message: 'Location permission is required!',
+          position: 'top-right',
+        })
         return false
       }
       if (newPermission !== 'granted') {
-        Notify.create({ type: 'negative', message: 'You must grant location permissions!' })
+        Notify.create({
+          type: 'negative',
+          message: 'You must grant location permissions!',
+          position: 'top-right',
+        })
         return false
       }
 
@@ -40,7 +52,7 @@ export default () => {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
     } catch (error: any) {
       console.error(error)
-      Notify.create({ type: 'negative', message: error.message })
+      Notify.create({ type: 'negative', message: error.message, position: 'top-right' })
       setTimeout(() => (disbleButtonLocation.value = false), 1000)
       return false
     }
@@ -48,7 +60,7 @@ export default () => {
 
   const getCurrentLocation = async () => {
     if (!map.value) {
-      Notify.create({ type: 'warning', message: 'El mapa no está listo' })
+      Notify.create({ type: 'warning', message: 'El mapa no está listo', position: 'top-right' })
       return false
     }
 
@@ -57,7 +69,11 @@ export default () => {
 
       const isPermission = await getPermission()
       if (!isPermission) {
-        Notify.create({ type: 'warning', message: 'Permiso de ubicación denegado' })
+        Notify.create({
+          type: 'warning',
+          message: 'Permiso de ubicación denegado',
+          position: 'top-right',
+        })
         return false
       }
 
@@ -78,7 +94,11 @@ export default () => {
         }
       })
 
-      Notify.create({ type: 'positive', message: 'Ubicación obtenida correctamente' })
+      Notify.create({
+        type: 'positive',
+        message: 'Ubicación obtenida correctamente',
+        position: 'top-right',
+      })
       return true
 
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -88,6 +108,7 @@ export default () => {
         type: 'negative',
         message: 'Error obteniendo ubicación',
         caption: error.message,
+        position: 'top-right',
       })
       return false
     } finally {
@@ -101,7 +122,11 @@ export default () => {
 
     if (error) {
       console.error('Error loading locations:', error)
-      Notify.create({ type: 'negative', message: `Failed to load locations: ${error.message}` })
+      Notify.create({
+        type: 'negative',
+        message: `Failed to load locations: ${error.message}`,
+        position: 'top-right',
+      })
       location.data = []
       return
     }
@@ -154,7 +179,11 @@ export default () => {
 
   const saveLocation = async (name: string) => {
     if (isLocationExist.value) {
-      Notify.create({ type: 'info', message: 'This location is already saved.' })
+      Notify.create({
+        type: 'info',
+        message: 'This location is already saved.',
+        position: 'top-right',
+      })
       return
     }
 
@@ -176,6 +205,7 @@ export default () => {
       Notify.create({
         type: 'negative',
         message: `Error saving location: ${error.message}`,
+        position: 'top-right',
       })
       return
     }
@@ -198,6 +228,7 @@ export default () => {
         message: 'Ubicacion guardada con exito',
         icon: 'check',
         type: 'positive',
+        position: 'top-right',
       })
     }
   }
@@ -211,7 +242,11 @@ export default () => {
 
     if (error) {
       console.error('Error deleting location:', error)
-      Notify.create({ type: 'negative', message: `Error deleting location: ${error.message}` })
+      Notify.create({
+        type: 'negative',
+        message: `Error deleting location: ${error.message}`,
+        position: 'top-right',
+      })
       return
     }
 
@@ -225,6 +260,7 @@ export default () => {
       message: 'Ubicacion Eliminada con existo',
       icon: 'check',
       type: 'positive',
+      position: 'top-right',
     })
   }
 

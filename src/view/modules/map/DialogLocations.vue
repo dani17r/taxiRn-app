@@ -24,8 +24,12 @@
             <q-item-label class="inline">Ver mis Ubicaciones</q-item-label>
           </q-item-section>
         </q-item>
-        
-        <q-item clickable @click="deleteCurrentLocationExists" :disable="!(!isStartPos || isLocationExist) || !isStateRoute">
+
+        <q-item
+          clickable
+          @click="deleteCurrentLocationExists"
+          :disable="!(!isStartPos || isLocationExist) || !isStateRoute"
+        >
           <q-item-section class="block">
             <q-icon name="delete" class="mr-3" size="17px" />
             <q-item-label class="inline">Borrar Ubicación Actual</q-item-label>
@@ -45,7 +49,12 @@
     </q-card>
   </q-dialog>
 
-  <q-dialog v-model="dialogs.viewLocations.value" full-width full-height class="backdrop-blur-[3px]">
+  <q-dialog
+    v-model="dialogs.viewLocations.value"
+    full-width
+    full-height
+    class="backdrop-blur-[3px]"
+  >
     <q-card class="bg-one !shadow-none">
       <q-toolbar>
         <q-icon name="pin_drop" size="25px" />
@@ -93,7 +102,7 @@
           :rules="[required]"
           class="mb-8"
           autogrow
-           color="yellow-9"
+          color="yellow-9"
         />
         <q-btn
           color="yellow-9"
@@ -107,28 +116,20 @@
   </q-dialog>
 
   <q-dialog v-model="dialogs.deleteAllLocations.value" class="backdrop-blur-[3px]">
-  <q-card class="bg-one !shadow-none">
-    <q-toolbar>
-      <q-icon name="warning" color="red" size="25px" />
-      <q-toolbar-title>Confirmar</q-toolbar-title>
-    </q-toolbar>
+    <q-card class="bg-one !shadow-none">
+      <q-toolbar>
+        <q-icon name="warning" color="red" size="25px" />
+        <q-toolbar-title>Confirmar</q-toolbar-title>
+      </q-toolbar>
 
-    <q-card-section>
-      ¿Estás seguro de eliminar todas las ubicaciones?
-    </q-card-section>
+      <q-card-section> ¿Estás seguro de eliminar todas las ubicaciones? </q-card-section>
 
-    <q-card-actions align="right">
-      <q-btn flat label="Cancelar" v-close-popup />
-      <q-btn
-        flat
-        label="Eliminar"
-        color="red"
-        @click="deleteAllLocations()"
-        v-close-popup
-      />
-    </q-card-actions>
-  </q-card>
-</q-dialog>
+      <q-card-actions align="right">
+        <q-btn flat label="Cancelar" v-close-popup />
+        <q-btn flat label="Eliminar" color="red" @click="deleteAllLocations()" v-close-popup />
+      </q-card-actions>
+    </q-card>
+  </q-dialog>
 </template>
 
 <script setup lang="ts">
@@ -149,8 +150,8 @@ const {
   getLocations,
   saveLocation,
   getLocation,
- location,
- isLocationExist
+  location,
+  isLocationExist,
 } = locationComposable()
 
 const { isStartPos, isStateRoute } = useStateMapComposable()
@@ -177,20 +178,18 @@ const dialogs = reactive({
 // Computed property to determine if a route is currently active
 
 const deleteAllLocations = async () => {
-  const { error } = await supabase
-    .from('locations')
-    .delete()
-    .eq('user_id', store.auth.current?.id);
+  const { error } = await supabase.from('locations').delete().eq('user_id', store.auth.current?.id)
 
   if (!error) {
-    location.data = [];
-    location.current = null;
+    location.data = []
+    location.current = null
     $q.notify({
       message: 'Todas las ubicaciones eliminadas',
-      type: 'positive'
-    });
+      type: 'positive',
+      position: 'top-right',
+    })
   }
-};
+}
 
 const validateAndSave = async () => {
   if (name.value) {
@@ -203,9 +202,9 @@ const validateAndSave = async () => {
 }
 
 const deleteCurrentLocationExists = async () => {
-    await deleteCurrentLocation().then(() => {
-      modelValue.value = false
-    })
+  await deleteCurrentLocation().then(() => {
+    modelValue.value = false
+  })
 }
 
 onMounted(async () => {
