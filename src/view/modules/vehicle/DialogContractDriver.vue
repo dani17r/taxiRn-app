@@ -1,130 +1,240 @@
 <template>
-     <q-dialog v-model="valueModel" full-width full-height maximized>
-      <q-card class="!shadow-none">
-        <q-toolbar>
+  <q-dialog v-model="valueModel" full-width class="backdrop-blur-[3px]">
+    <q-card class="!shadow-none bg-one h-screen">
+      <q-toolbar>
         <q-toolbar-title></q-toolbar-title>
-        <q-btn flat round dense icon="close" color="red" v-close-popup />
+        <q-btn flat round dense icon="close" color="red" v-close-popup @click="reset"/>
       </q-toolbar>
 
-        <q-card-section>
-          <div class="text-[22px]">Contratar a <b>{{ driver?.fullname }}</b></div>
-        </q-card-section>
+      <q-card-section>
+        <div class="text-[22px]">
+          Contratar a <b>{{ driver?.fullname }}</b>
+        </div>
+      </q-card-section>
 
-        <q-card-section>
-          <div class="column q-gutter-md">
-            <!-- Opciones de Ubicación/Ruta -->
-            <div class="text-subtitle2">Ubicación/Ruta</div>
-            <q-btn
-              label="Usar Ubicación Actual"
-              color="yellow-8"
-              icon="my_location"
-              outline
-              no-caps
-              @click="useCurrentLocation"
-            />
-            <!-- {{ hasMapElements }} {{ currentLocation != null }} -->
-            <!-- Aquí podrías mostrar la ubicación/ruta seleccionada -->
-            <div v-if="selectedLocationInfo" class="text-caption text-grey">
-              {{ selectedLocationInfo }}
-            </div>
-
-            <!-- Descripción del Servicio -->
-            <q-input
-              v-model="serviceDescription"
-              label="Detalles de ubicacion"
-              type="textarea"
-              autogrow
-            />
-
-            <!-- Tipo de Servicio -->
-            <q-select
-              v-model="serviceType"
-              :options="serviceTypeOptions"
-              label="Tipo de Servicio"
-              map-options
-              emit-value
-            />
-          </div>
-        </q-card-section>
-
-        <q-card-actions align="right" class="m-2">
-          <q-btn label="Cancelar" color="negative" flat v-close-popup />
+      <q-card-section>
+        <div class="column q-gutter-md">
+          <!-- Opciones de Ubicación/Ruta -->
+          <div class="text-subtitle2">Ubicación/Ruta</div>
           <q-btn
-            label="Enviar Contrato"
-            color="bg-yellow-10"
-            class="bg-yellow-10"
-            @click="sendContract"
-            :disable="!canSendContract"
-            unelevated
-            v-close-popup
+            :label="isRoute ? 'Usar Ruta Actual' : 'Usar Ubicación Actual'"
+            color="yellow-8"
+            icon="my_location"
+            :class="selectLocationOrRoute.status ? 'bg-yellow-8 !text-white' : ''"
+            outline
+            no-caps
+            @click="useCurrentLocation"
           />
-        </q-card-actions>
-      </q-card>
+          <div class="text-caption text-grey" v-if="selectLocationOrRoute.status">
+            {{ selectLocationOrRoute.select }}
+          </div>
 
-    </q-dialog>
-    <div id="dialogmap"></div>
+          <!-- Descripción del Servicio -->
+          <q-input
+            v-model="contract.description"
+            label="Detalles necesarios"
+            type="textarea"
+            color="yellow-9"
+            autogrow
+          />
+
+          <!-- Tipo de Servicio -->
+          <q-select
+            v-model="contract.service_type"
+            :options="service_type.data"
+            label="Tipo de Servicio"
+            map-options
+            emit-value
+          />
+        </div>
+      </q-card-section>
+
+      <q-card-actions align="right" class="m-2 absolute bottom-0 right-0">
+        <q-btn label="Cancelar" flat v-close-popup @click="reset"/>
+        <q-btn
+          label="Gestionar Contrato"
+          color="bg-yellow-9"
+          class="bg-yellow-9"
+          @click="sendContract"
+          unelevated
+        />
+      </q-card-actions>
+    </q-card>
+  </q-dialog>
 </template>
 
 <script setup lang="ts">
-// import { supabase } from '@services/supabase.services'
-// import useLocationComposable from '@composables/location'
+import type { ContractInputsI, ServiceTypeI } from '@interfaces/contract'
+import useMapLocationComposable from '@composables/map/useLocation'
+import useMapRouteComposable from '@composables/map/useRoute'
+import useMapStateComposable from '@composables/map/state'
+import useMapComposable from '@composables/map/main'
+import useSuperComposable from '@composables/super'
+import supabase from '@services/supabase.services'
 import useTabsComposable from '@composables/tabs'
-// import useMapComposable from '@composables/map'
 import type { DriverT } from '@interfaces/user'
-import { ref, computed, onMounted } from 'vue'
+import { ref, onMounted, reactive, watch } from 'vue'
 import { useQuasar } from 'quasar'
+import { omit } from 'lodash'
 
 const $q = useQuasar()
-// const { hasMapElements,initMap } = useMapComposable()
-// const { currentLocation  } = useLocationComposable
+const { isStateLocation, isLocation, isRoute, isStateRoute, route, location } =
+  useMapStateComposable()
+const { getLocations } = useMapLocationComposable()
+const { getRoutes } = useMapRouteComposable()
+const { map, initMap } = useMapComposable()
 const { tabs } = useTabsComposable()
+const { store } = useSuperComposable()
 
-const valueModel = defineModel({ default: false });
-const props = defineProps<{ driver: DriverT|null }>()
+const valueModel = defineModel({ default: false })
+const props = defineProps<{ driver: DriverT | null }>()
 
-const serviceDescription = ref('')
-const serviceType = ref<string | null>(null)
-const selectedLocationInfo = ref<string | null>(null) 
-
-const serviceTypeOptions = [
-  { label: 'Delivery', value: 'delivery' },
-  { label: 'Traslado', value: 'transfer' },
-  { label: 'Envío de Paquete', value: 'package_delivery' },
-]
-
-// Lógica del Modal
-const canSendContract = computed(() => {
-  return !!serviceType.value && !!selectedLocationInfo.value
+const selectLocationOrRoute = reactive({
+  status: false,
+  select: '',
 })
 
+const selectType = ref<'location_id' | 'route_id'>('location_id')
+
+const service_type = reactive({
+  data: [
+    { label: 'Delivery', value: 'delivery' },
+    { label: 'Traslado Personal', value: 'taxi' },
+    { label: 'Ambos', value: 'both' },
+  ],
+  value: '' as ServiceTypeI,
+})
+
+const contract = ref<ContractInputsI['CreateI']>({
+  service_type: service_type.value,
+  created_at: new Date(),
+  description: '',
+  location_id: '',
+  vehicle_id:  String(props.driver?.vehicle?.id),
+  client_id: String(store.auth.current?.id),
+  route_id: '',
+})
 
 const useCurrentLocation = () => {
-  
+  if (!isLocation.value && !isRoute.value) {
+    $q.dialog({
+      title: 'Ubicación Actual',
+      message: 'NO TIENES RUTA NI UBICACION MARCADA',
+      cancel: false,
+      color: 'yellow-9',
+      class:'!shadow-none bg-one',
+    })
+    return
+  }
+
+  if (isLocation.value) {
+    if (isStateLocation.value) {
+      selectLocationOrRoute.status = true
+      selectLocationOrRoute.select = String(location.current?.name)
+      contract.value.location_id = String(location.current?.id)
+      contract.value = omit(contract.value, 'route_id')
+      selectType.value = 'location_id'
+      return
+    }
+
+    $q.dialog({
+      title: 'Ubicación Actual',
+      message: 'Debes guardar primero la Ubicacion. Ve al mapa y guardala.',
+      cancel: false,
+      color: 'yellow-9',
+      class:'!shadow-none bg-one',
+    })
+    selectLocationOrRoute.status = false
+  }
+
+  if (isRoute.value) {
+    if (isStateRoute.value) {
+      selectLocationOrRoute.status = true
+      selectLocationOrRoute.select = String(route.current?.name)
+      contract.value.route_id = String(route.current?.id)
+      contract.value = omit(contract.value, 'location_id')
+      selectType.value = 'route_id'
+      return
+    }
+
+    $q.dialog({
+      title: 'Ruta Actual',
+      message: 'Debes guardar primero la ruta. Ve al mapa y guardala.',
+      cancel: false,
+      color: 'yellow-9',
+      class:'!shadow-none bg-one',
+    })
+    selectLocationOrRoute.status = false
+  }
+
 }
 
-const sendContract = () => {
-  if (!canSendContract.value) return
+const sendContract = async () => {
+  console.log(contract.value)
+  if(!contract.value[selectType.value] || !contract.value.service_type){
+    return $q.notify({
+        type: 'negative',
+        message: `Porfavor completa los campos.`,
+      })
+  }
+  try {
+    
+    const { data, error } = await supabase
+    .from('contracts')
+    .insert([
+      { ...contract.value }
+    ])
+    .select()
 
-  $q.notify({
-    type: 'positive',
-    message: `Contrato enviado para ${props.driver?.fullname}`,
+    if(error) throw error
+
+    if (data) {
+       $q.notify({
+        type: 'positive',
+        message: `Contrato enviado para ${props.driver?.fullname}`,
+      })
+
+      $q.dialog({
+        title: 'Contrato enviado',
+        message: 'Esperar el precio del conductor para aceptar o rechazar el contrato. Puedes ir a la badeja de contratos.',
+        cancel: false,
+        color: 'yellow-9',
+        class:'!shadow-none bg-one',
+      }).onOk(()=> valueModel.value = false)
+    }
+   }
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  catch (error:any) {
+     $q.notify({
+    type: 'negative',
+    message: error.message,
   })
+  }
 
-  // Resetear modal
-  resetModal()
+  reset()
 }
 
-onMounted(()=> {
-  if(tabs.select == 'map') {
-  // initMap('dialogmap')
+onMounted(async () => {
+  if (tabs.select == 'vehicles') {
+    contract.value.client_id = String(store.auth.current?.id)
+
+    if (!map.value) {
+      if (location.data.length === 0) await getLocations()
+      if (route.data.length === 0) await getRoutes()
+      setTimeout(() => initMap(), 400)
+    }
   }
 })
 
-const resetModal = () => {
-  serviceDescription.value = ''
-  serviceType.value = null
-  selectedLocationInfo.value = null
+const reset = () => {
+  contract.value.service_type = service_type.value
+  contract.value.created_at = new Date()
+  selectLocationOrRoute.status = false
+  selectLocationOrRoute.select = ''
+  contract.value.description = ''
 }
 
+watch(()=> props.driver, (newVal)=> {
+  contract.value.vehicle_id = String(newVal?.vehicle?.id)
+})
 </script>
-

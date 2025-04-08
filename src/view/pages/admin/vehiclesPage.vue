@@ -1,5 +1,5 @@
 <template>
-  <q-page class="fixed left-0 top-13 w-full h-screen">
+  <q-page class="fixed left-0 top-13 w-full h-screen mobile-keyboard-fix">
     <h5 class="text-yellow-8 !font-bold w-full text-center">Conductores</h5>
     <div class="row q-col-gutter-md">
       <div class="col-12 col-sm-6">
@@ -7,6 +7,7 @@
           v-model="searchQuery"
           label="Buscar conductor"
           debounce="500"
+          color="yellow-9"
           dense
           filled
           @update:model-value="handleSearchUpdate"
@@ -15,7 +16,7 @@
             <q-icon name="search" />
           </template>
         </q-input>
-      
+
         <q-select
           v-model="vehicleTypeFilter"
           :options="vehicleTypeOptions"
@@ -52,31 +53,25 @@
                 >
                 <q-item-label caption class="!text-[14px]"
                   >Vehículo:
-                  {{ driver.vehicles[0]?.vehicle_type == 'car' ? 'Carro' : 'Moto' }}</q-item-label
+                  {{ driver.vehicle?.vehicle_type == 'car' ? 'Carro' : 'Moto' }}</q-item-label
                 >
                 <q-item-label caption class="!text-[14px]"
-                  >Marca: {{ driver.vehicles[0]?.brand }}</q-item-label
+                  >Marca: {{ driver.vehicle?.brand }}</q-item-label
                 >
                 <q-item-label caption class="!text-[14px]"
-                  >Modelo: {{ driver.vehicles[0]?.model || 'No contiene' }}</q-item-label
+                  >Modelo: {{ driver.vehicle?.model || 'No contiene' }}</q-item-label
                 >
                 <q-item-label caption class="!text-[14px]"
-                  >Color: {{ driver.vehicles[0]?.color || 'No contiene' }}</q-item-label
+                  >Color: {{ driver.vehicle?.color || 'No contiene' }}</q-item-label
                 >
                 <q-item-label caption class="!text-[14px]"
-                  >Online: {{ driver.vehicles[0]?.is_active ? 'Si' : 'No' }}</q-item-label
+                  >Online: {{ driver.vehicle?.is_active ? 'Si' : 'No' }}</q-item-label
                 >
 
                 <q-item-label>
-                  <div class="q-mt-sm flex q-gutter-sm"> <!-- Use flex and q-gutter -->
-                    <q-btn
-                      dense
-                      flat
-                      round
-                      color="primary"
-                      icon="edit"
-                      @click="editDriver(driver)"
-                    >
+                  <div class="q-mt-sm flex q-gutter-sm">
+                    <!-- Use flex and q-gutter -->
+                    <q-btn dense flat round color="primary" icon="edit" @click="editDriver(driver)">
                       <q-tooltip>Editar</q-tooltip>
                     </q-btn>
                     <q-btn
@@ -87,7 +82,7 @@
                       :icon="driver.is_blocked ? 'lock_open' : 'block'"
                       @click="driver.is_blocked ? unblockDriver(driver.id) : blockDriver(driver.id)"
                     >
-                      <q-tooltip>{{ driver.is_blocked ? 'Desbloquear' : 'Bloquear' }}</q-tooltip>
+                   <q-tooltip>{{ driver.is_blocked ? 'Desbloquear' : 'Bloquear' }}</q-tooltip>
                     </q-btn>
                     <q-btn
                       dense
@@ -95,9 +90,9 @@
                       round
                       color="red"
                       icon="delete"
-                      @click="deleteDriver(driver.id)"
+                      @click="deleteDriver(driver)"
                     >
-                     <q-tooltip>Eliminar</q-tooltip>
+                      <q-tooltip>Eliminar</q-tooltip>
                     </q-btn>
                   </div>
                 </q-item-label>
@@ -132,7 +127,9 @@
         active-class="bg-yellow-9 text-white"
         @update:model-value="handlePaginationUpdate"
       >
-        <span class="text-caption q-mx-sm">Página {{ currentPage }} de {{ Math.ceil(totalDrivers / 10) }}</span>
+        <span class="text-caption q-mx-sm"
+          >Página {{ currentPage }} de {{ Math.ceil(totalDrivers / 10) }}</span
+        >
       </q-pagination>
     </div>
     <q-btn
@@ -144,43 +141,48 @@
       @click="newDriver()"
     />
 
-    <DialogNewDriver
+    <DialogAddOrEditeDriver
       v-model="dialogs.newDriver.value"
       :editing-driver="editingDriver"
-      @driver-created="() => {fetchDrivers(currentPage, 10).catch(() => {})} "
-      @driver-updated="() => {fetchDrivers(currentPage, 10).catch(() => {})} "
+      @driver-created="
+        () => {
+          fetchDrivers(currentPage, 10).catch(() => {})
+        }
+      "
+      @driver-updated="
+        () => {
+          fetchDrivers(currentPage, 10).catch(() => {})
+        }
+      "
     />
   </q-page>
 </template>
 
 <script setup lang="ts">
-import type { VehicleI } from '@interfaces/vehicle';
-import type { UserI } from '@interfaces/user';
-import { ref, reactive, onMounted, defineAsyncComponent } from 'vue'; // Import defineAsyncComponent
-import { useQuasar } from 'quasar';
-import { supabase } from '@services/supabase.services';
-import { formatCustomDate } from '@helpers/dateTime';
+import type { DriverT } from '@interfaces/user'
+import { ref, reactive, onMounted, defineAsyncComponent } from 'vue' // Import defineAsyncComponent
+import { useQuasar } from 'quasar'
+import { supabase } from '@services/supabase.services'
+import { formatCustomDate } from '@helpers/dateTime'
 
-const DialogNewDriver = defineAsyncComponent(() => import('@modules/vehicle/DialogNewDriver.vue'))
+const DialogAddOrEditeDriver = defineAsyncComponent(() => import('@modules/vehicle/DialogAddOrEditeDriver.vue'))
 
 const $q = useQuasar()
 
-type NewUserT = UserI & { vehicles: VehicleI[] }
-
-const drivers = ref<NewUserT[]>([])
+const drivers = ref<DriverT[]>([])
 const isLoading = ref(false)
 const searchQuery = ref('')
 const vehicleTypeFilter = ref<string | null>(null)
 const totalDrivers = ref(0)
 const currentPage = ref(1)
-const editingDriver = ref<NewUserT | null>(null); // Add state for editing driver
+const editingDriver = ref<DriverT | null>(null) // Add state for editing driver
 
 const vehicleTypeOptions = [
   { label: 'Carro', value: 'car' },
   { label: 'Moto', value: 'motorcycle' },
 ]
 
-async function fetchDrivers(page: number, itemsPerPage = 10) {
+const fetchDrivers = async (page: number, itemsPerPage = 10) => {
   try {
     isLoading.value = true
     const from = (page - 1) * itemsPerPage
@@ -188,8 +190,9 @@ async function fetchDrivers(page: number, itemsPerPage = 10) {
 
     let query = supabase
       .from('users')
-      .select('*, vehicles(*)', { count: 'exact' })
+      .select('*, vehicle:vehicles!user_id (*)', { count: 'exact' })
       .eq('role', 'driver')
+      .is('deleted_at', null)
       .range(from, to)
       .order('created_at', { ascending: false })
 
@@ -206,7 +209,7 @@ async function fetchDrivers(page: number, itemsPerPage = 10) {
 
     if (error) throw error
 
-    drivers.value = data || []
+    drivers.value = data as DriverT[] || []
     totalDrivers.value = count || 0
   } catch (error) {
     $q.notify({
@@ -226,56 +229,60 @@ const dialogs = reactive({
   },
 })
 
-// Function to open the dialog for editing
-const editDriver = (driver: NewUserT) => {
-  editingDriver.value = driver;
-dialogs.newDriver.toggle();
+const editDriver = (driver: DriverT) => {
+  editingDriver.value = driver
+  dialogs.newDriver.toggle()
 }
 
 const newDriver = () => {
-  editingDriver.value = null;
-  dialogs.newDriver.toggle();
+  editingDriver.value = null
+  dialogs.newDriver.toggle()
 }
 
-function deleteDriver(driverId: string) {
+const deleteDriver = (driver: DriverT) => {
   $q.dialog({
     title: 'Confirmar eliminación',
     message: '¿Estás seguro de que deseas eliminar este conductor?',
     cancel: 'Cancelar',
+    ok: 'Si',
     persistent: true,
     color: 'yellow-9',
-    class: '!shadow-none',
+    class:'!shadow-none bg-one',
     // eslint-disable-next-line @typescript-eslint/no-misused-promises
   }).onOk(async () => {
     try {
-      await supabase.rpc('delete_user', {
-        p_user_id: driverId
-      }).then(()=>{
-        $q.notify({
-          type: 'positive',
-          message: 'Conductor eliminado exitosamente',
-        })
-  
-        fetchDrivers(currentPage.value, 10).catch(() => {})
+      const { error } = await supabase.rpc('delete_user', { p_user_id:driver.id })
+      if (error) throw error
+
+      const { error:errorDriver } = await supabase.from('vehicles').delete().eq('id', driver.id)
+      if (errorDriver) throw errorDriver
+
+      $q.notify({
+        type: 'positive',
+        message: 'Conductor eliminado exitosamente',
       })
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    } catch (error: any){
-        $q.notify({
-          type: 'negative',
-          message: error.message,
-        })
+
+      fetchDrivers(currentPage.value, 10).catch(() => {})
+
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    } catch (error: any) {
+      $q.notify({
+        type: 'negative',
+        message: error.message,
+      })
     }
   })
 }
 
-function blockDriver(driverId: string) {
+const blockDriver = (driverId: string) => {
   $q.dialog({
     title: 'Confirmar bloqueo',
     message: '¿Estás seguro de que deseas bloquear este conductor?',
     cancel: 'Cancelar',
+    ok: 'Si',
     persistent: true,
     color: 'yellow-9',
-    class: '!shadow-none',
+    class:'!shadow-none bg-one',
     // eslint-disable-next-line @typescript-eslint/no-misused-promises
   }).onOk(async () => {
     await supabase.from('users').update({ is_blocked: true }).eq('id', driverId)
@@ -288,14 +295,15 @@ function blockDriver(driverId: string) {
   })
 }
 
-function unblockDriver(driverId: string) {
+const unblockDriver = (driverId: string) => {
   $q.dialog({
     title: 'Confirmar desbloqueo',
     message: '¿Estás seguro de que deseas desbloquear este conductor?',
     cancel: 'Cancelar',
+    ok: 'Si',
     persistent: true,
     color: 'yellow-9',
-    class: '!shadow-none',
+    class:'!shadow-none bg-one',
     // eslint-disable-next-line @typescript-eslint/no-misused-promises
   }).onOk(async () => {
     await supabase.from('users').update({ is_blocked: false }).eq('id', driverId)
@@ -313,15 +321,12 @@ onMounted(() => {
   fetchDrivers(currentPage.value, 10).catch(() => {})
 })
 
-// Function to handle search input update
 const handleSearchUpdate = () => {
-  currentPage.value = 1;
-  fetchDrivers(currentPage.value, 10).catch(() => {});
-};
+  currentPage.value = 1
+  fetchDrivers(currentPage.value, 10).catch(() => {})
+}
 
-// Function to handle pagination update
 const handlePaginationUpdate = (newPage: number) => {
-  // currentPage is already updated by v-model, just fetch data
-  fetchDrivers(newPage, 10).catch(() => {});
-};
+  fetchDrivers(newPage, 10).catch(() => {})
+}
 </script>

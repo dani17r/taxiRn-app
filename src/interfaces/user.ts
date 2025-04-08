@@ -28,7 +28,7 @@ export interface UserI {
   updated_at: Date
 }
 
-export type DriverT = UserI & { vehicles: VehicleI[] }
+export type DriverT = UserI & { vehicle: VehicleI }
 
 export interface StateI {
   lifecycles: {

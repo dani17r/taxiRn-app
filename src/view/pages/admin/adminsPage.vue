@@ -1,5 +1,5 @@
 <template>
-  <q-page class="fixed left-0 top-13 w-full h-screen">
+  <q-page class="fixed left-0 top-13 w-full h-screen mobile-keyboard-fix">
     <h5 class="text-yellow-700 !font-bold w-full text-center">Administradores</h5>
     <div class="row q-col-gutter-md">
       <div class="col-12 col-sm-6">
@@ -7,6 +7,7 @@
           v-model="searchQuery"
           label="Buscar administrador"
           debounce="500"
+          color="yellow-9"
           dense
           filled
           @update:model-value="handleSearchUpdate"
@@ -34,42 +35,45 @@
                 <q-item-label caption class="!text-[14px]"
                   >creado el: {{ formatCustomDate(String(admin.created_at)) }}</q-item-label
                 >
-                 <q-item-label>
-                   <div class="q-mt-sm flex q-gutter-sm"> <!-- Buttons below details -->
-                     <q-btn
-                       dense
-                       flat
-                       round
-                       color="primary"
-                       icon="edit"
-                       @click="editAdmin(admin)"
-                     >
-                       <q-tooltip>Editar</q-tooltip>
-                     </q-btn>
-                     <template v-if="admin.email !== 'admin@admin.com' && admin.id !== currentAdminId">
-                       <q-btn
-                         dense
-                         flat
-                         round
-                         :color="admin.is_blocked ? 'green' : 'orange'"
-                         :icon="admin.is_blocked ? 'lock_open' : 'block'"
-                         @click="admin.is_blocked ? unblockAdmin(admin.id) : blockAdmin(admin.id)"
-                       >
-                         <q-tooltip>{{ admin.is_blocked ? 'Desbloquear' : 'Bloquear' }}</q-tooltip>
-                       </q-btn>
-                       <q-btn
-                         dense
-                         flat
-                         round
-                         color="red"
-                         icon="delete"
-                         @click="deleteAdmin(admin.id, admin.user_id)"
-                       >
-                        <q-tooltip>Eliminar</q-tooltip>
-                       </q-btn>
-                     </template>
-                   </div>
-                 </q-item-label>
+                <q-item-label>
+                  <div class="q-mt-sm flex q-gutter-sm">
+                    <!-- Buttons below details -->
+                    <q-btn
+                      dense
+                      flat
+                      round
+                      color="primary"
+                      icon="edit"
+                      @click="editAdmin(admin)"
+                      v-if="canEdit(admin)"
+                    >
+                      <q-tooltip>Editar</q-tooltip>
+                    </q-btn>
+
+                    <q-btn
+                      dense
+                      flat
+                      round
+                      :color="admin.is_blocked ? 'green' : 'orange'"
+                      :icon="admin.is_blocked ? 'lock_open' : 'block'"
+                      @click="admin.is_blocked ? unblockAdmin(admin.id) : blockAdmin(admin.id)"
+                      v-if="canBlock(admin)"
+                    >
+                      <q-tooltip>{{ admin.is_blocked ? 'Desbloquear' : 'Bloquear' }}</q-tooltip>
+                    </q-btn>
+                    <q-btn
+                      dense
+                      flat
+                      round
+                      color="red"
+                      icon="delete"
+                      @click="deleteAdmin(admin.id)"
+                      v-if="canDelete(admin)"
+                    >
+                      <q-tooltip>Eliminar</q-tooltip>
+                    </q-btn>
+                  </div>
+                </q-item-label>
               </q-item-section>
               <!-- Removed the separate side section for buttons -->
             </q-item>
@@ -113,14 +117,13 @@
       color="yellow-9"
       icon="person_add"
       class="fixed bottom-15 right-5"
-      @click="newAdmin()"
+      @click="addOrEditeAdmin()"
     />
 
-    <DialogNewAdmin
-      v-model="dialogs.newAdmin.value"
+    <DialogAddOrEditeAdmin
+      v-model="dialogs.addOrEditeAdmin.value"
       :editing-admin="editingAdmin"
-      @admin-created="fetchAdmins(currentPage, 10).catch(() => {})"
-      @admin-updated="fetchAdmins(currentPage, 10).catch(() => {})"
+      @update="fetchAdmins(currentPage, 10).catch(() => {})"
     />
   </q-page>
 </template>
@@ -130,20 +133,24 @@ import { formatCustomDate } from '@helpers/dateTime'
 import { ref, reactive, onMounted } from 'vue'
 import { useQuasar } from 'quasar'
 import { supabase } from '@services/supabase.services'
+import useSuperComposable from '@composables/super'
 import { defineAsyncComponent } from 'vue'
 import type { UserI } from '@interfaces/user'
 
-const DialogNewAdmin = defineAsyncComponent(() => import('@modules/admin/DialogNewAdmin.vue'))
+const DialogAddOrEditeAdmin = defineAsyncComponent(
+  () => import('@modules/admin/DialogAddOrEditeAdmin.vue'),
+)
 
 const $q = useQuasar()
+const { store } = useSuperComposable()
 
 const admins = ref<UserI[]>([])
 const isLoading = ref(false)
 const searchQuery = ref('')
 const totalAdmins = ref(0)
 const currentPage = ref(1)
-const editingAdmin = ref<UserI | null>(null);
-const currentAdminId = ref<string | null>(null);
+const editingAdmin = ref<UserI | null>(null)
+const currentAdminId = ref<string | null>(null)
 
 async function fetchAdmins(page: number, itemsPerPage = 10) {
   try {
@@ -155,6 +162,7 @@ async function fetchAdmins(page: number, itemsPerPage = 10) {
       .from('users')
       .select('*', { count: 'exact' })
       .eq('role', 'admin')
+      .is('deleted_at', null)
       .range(from, to)
       .order('created_at', { ascending: false })
 
@@ -168,6 +176,13 @@ async function fetchAdmins(page: number, itemsPerPage = 10) {
 
     admins.value = data || []
     totalAdmins.value = count || 0
+
+    const {
+      data: { session },
+    } = await supabase.auth.getSession()
+
+    currentAdminId.value = session?.user?.id || null
+
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
   } catch (error: any) {
     $q.notify({
@@ -180,103 +195,162 @@ async function fetchAdmins(page: number, itemsPerPage = 10) {
   }
 }
 
-async function deleteAdmin(adminId: string, authId: string) {
-  try {
-    const { error } = await supabase.from('users').delete().eq('id', adminId)
-    if (error) throw error
+const deleteAdmin = (p_user_id: string) => {
+  $q.dialog({
+    title: 'Confirmar eliminación',
+    message: '¿Estás seguro de que deseas eliminar este admin?',
+    cancel: 'Cancelar',
+    ok: 'Si',
+    persistent: true,
+    color: 'yellow-9',
+    class: '!shadow-none bg-one',
+    // eslint-disable-next-line @typescript-eslint/no-misused-promises
+  }).onOk(async () => {
+    try {
+      const { error } = await supabase.rpc('delete_user', { p_user_id })
+      if (error) throw error
 
-    await supabase.auth.admin.deleteUser(authId)
+      $q.notify({
+        type: 'positive',
+        message: 'Administrador eliminado correctamente',
+      })
 
-    $q.notify({
-      type: 'positive',
-      message: 'Administrador eliminado correctamente',
-    })
-
-    const { data: { session } } = await supabase.auth.getSession();
-  currentAdminId.value = session?.user?.id || null;
-  fetchAdmins(currentPage.value, 10).catch(() => {});
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  } catch (error: any) {
-    $q.notify({
-      type: 'negative',
-      message: 'Error al eliminar administrador',
-      caption: error.message,
-    })
-  }
+      fetchAdmins(currentPage.value, 10).catch(() => {})
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    } catch (error: any) {
+      $q.notify({
+        type: 'negative',
+        message: 'Error al eliminar administrador',
+        caption: error.message,
+      })
+    }
+  })
 }
 
-async function blockAdmin(adminId: string) {
-  try {
-    const { error } = await supabase.from('users').update({ is_blocked: true }).eq('id', adminId)
+const blockAdmin = (adminId: string) => {
+  $q.dialog({
+    title: 'Confirmar Bloqueo',
+    message: '¿Estás seguro de que deseas bloquear este admin?',
+    cancel: 'Cancelar',
+    ok: 'Si',
+    persistent: true,
+    color: 'yellow-9',
+    class: '!shadow-none bg-one',
+    // eslint-disable-next-line @typescript-eslint/no-misused-promises
+  }).onOk(async () => {
+    try {
+      const { error } = await supabase.from('users').update({ is_blocked: true }).eq('id', adminId)
 
-    if (error) throw error
+      if (error) throw error
 
-    $q.notify({
-      type: 'positive',
-      message: 'Administrador bloqueado correctamente',
-    })
+      $q.notify({
+        type: 'positive',
+        message: 'Administrador bloqueado correctamente',
+      })
 
-    fetchAdmins(currentPage.value, 10).catch(() => {})
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  } catch (error: any) {
-    $q.notify({
-      type: 'negative',
-      message: 'Error al bloquear administrador',
-      caption: error.message,
-    })
-  }
+      fetchAdmins(currentPage.value, 10).catch(() => {})
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    } catch (error: any) {
+      $q.notify({
+        type: 'negative',
+        message: 'Error al bloquear administrador',
+        caption: error.message,
+      })
+    }
+  })
 }
 
-async function unblockAdmin(adminId: string) {
-  try {
-    const { error } = await supabase.from('users').update({ is_blocked: false }).eq('id', adminId)
+const unblockAdmin = (adminId: string) => {
+  $q.dialog({
+    title: 'Confirmar Desbloqueo',
+    message: '¿Estás seguro de que deseas desbloquear este admin?',
+    cancel: 'Cancelar',
+    ok: 'Si',
+    persistent: true,
+    color: 'yellow-9',
+    class: '!shadow-none bg-one',
+    // eslint-disable-next-line @typescript-eslint/no-misused-promises
+  }).onOk(async () => {
+    try {
+      const { error } = await supabase.from('users').update({ is_blocked: false }).eq('id', adminId)
 
-    if (error) throw error
+      if (error) throw error
 
-    $q.notify({
-      type: 'positive',
-      message: 'Administrador desbloqueado correctamente',
-    })
+      $q.notify({
+        type: 'positive',
+        message: 'Administrador desbloqueado correctamente',
+      })
 
-    fetchAdmins(currentPage.value, 10).catch(() => {})
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  } catch (error: any) {
-    $q.notify({
-      type: 'negative',
-      message: 'Error al desbloquear administrador',
-      caption: error.message,
-    })
-  }
+      fetchAdmins(currentPage.value, 10).catch(() => {})
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    } catch (error: any) {
+      $q.notify({
+        type: 'negative',
+        message: 'Error al desbloquear administrador',
+        caption: error.message,
+      })
+    }
+  })
 }
 
 const dialogs = reactive({
-  newAdmin: {
+  addOrEditeAdmin: {
     value: false,
-    toggle: () => (dialogs.newAdmin.value = !dialogs.newAdmin.value),
+    toggle: () => (dialogs.addOrEditeAdmin.value = !dialogs.addOrEditeAdmin.value),
   },
 })
 
 const editAdmin = (admin: UserI) => {
-  editingAdmin.value = admin;
-  dialogs.newAdmin.toggle();
+  editingAdmin.value = admin
+  dialogs.addOrEditeAdmin.toggle()
 }
 
-const newAdmin = () => {
-  editingAdmin.value = null;
-  dialogs.newAdmin.toggle();
+const addOrEditeAdmin = () => {
+  editingAdmin.value = null
+  dialogs.addOrEditeAdmin.toggle()
 }
 
 // Function to handle search input update
 const handleSearchUpdate = () => {
-  currentPage.value = 1;
-  fetchAdmins(currentPage.value, 10).catch(() => {});
-};
+  currentPage.value = 1
+  fetchAdmins(currentPage.value, 10).catch(() => {})
+}
 
 // Function to handle pagination update
 const handlePaginationUpdate = (newPage: number) => {
   // currentPage is already updated by v-model, just fetch data
-  fetchAdmins(newPage, 10).catch(() => {});
-};
+  fetchAdmins(newPage, 10).catch(() => {})
+}
+
+const canEdit = (admin: UserI) => {
+  const currentUser = store.auth.current
+  return (
+    // El admin general puede editar a cualquiera
+    currentUser?.email === 'admin@admin.com' ||
+    // Otros admins pueden editar a cualquiera excepto al admin general
+    (currentUser?.email !== 'admin@admin.com' && admin.email !== 'admin@admin.com')
+  )
+}
+
+const canBlock = (admin: UserI) => {
+  const currentUser = store.auth.current
+  return (
+    // Solo el admin general puede bloquear/desbloquear a otros
+    currentUser?.email === 'admin@admin.com' && admin.email !== 'admin@admin.com'
+  )
+}
+
+const canDelete = (admin: UserI) => {
+  const currentUser = store.auth.current
+  return (
+    // El admin general puede eliminar a otros admins
+    (currentUser?.email === 'admin@admin.com' && admin.email !== 'admin@admin.com') ||
+    // Otros admins pueden eliminar solo a no-admins (si aplica)
+    (currentUser?.email !== 'admin@admin.com' &&
+      admin.email !== 'admin@admin.com' &&
+      admin.id !== currentUser?.id)
+  )
+}
 
 onMounted(() => {
   fetchAdmins(currentPage.value, 10).catch(() => {})

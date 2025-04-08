@@ -55,7 +55,7 @@
             :key="rou.id"
             clickable
             :class="[
-              route.current?.end_point.coordinates[1] == rou.end_point.coordinates[1]
+              route.current?.end_point.coordinates[1] == rou.end_point.coordinates[1] && rou.start_point.coordinates[1] == route.current?.start_point.coordinates[1]
                 ? 'bg-yellow-8'
                 : '',
               '!rounded-lg w-full',
@@ -97,6 +97,7 @@
           aria-placeholder="Ej: Casa al Trabajo"
           :rules="[required]"
           class="mb-4"
+          color="yellow-9"
           autogrow
         />
         <q-input
@@ -104,6 +105,7 @@
           label="Descripción (Opcional)"
           aria-placeholder="Descripción breve"
           class="mb-8"
+           color="yellow-9"
           autogrow
           type="textarea"
         />

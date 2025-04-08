@@ -50,10 +50,10 @@ export default () => {
   }
 
   const getRoutes = async () => {
-    const user_id = String(store.auth.current?.id)
+    const p_user_id = String(store.auth.current?.id)
 
     try {
-      const { data, error } = await supabase.rpc('get_routes', { user_id })
+      const { data, error } = await supabase.rpc('get_routes', { p_user_id })
 
       if (error) {
         console.error('Error loading routes:', error)
@@ -71,7 +71,6 @@ export default () => {
 
             const newRoute = {
               id: rou.id,
-              user_id: rou.user_id,
               name: rou.name,
               description: rou.description,
               start_point: startPoint ? JSON.parse(startPoint) : null,
@@ -80,7 +79,9 @@ export default () => {
               created_at: rou.created_at,
             } as RouteI
 
-            if (newRoute.end_point.coordinates[1]! == route.endPos?.lat) {
+            const endPosLat = newRoute.end_point.coordinates[1]! == route.endPos?.lat
+            const startPosLat = newRoute.start_point.coordinates[1]! == route.startPos?.lat
+            if (endPosLat && startPosLat) {
               route.current = newRoute
             }
 
@@ -100,7 +101,10 @@ export default () => {
   }
 
   const getRoute = (routeSelect: RouteI) => {
+    console.log('getRoute', routeSelect)
     if (!map.value) return
+
+    route.current = routeSelect
 
     if (routeSelect.start_point?.coordinates && routeSelect.end_point?.coordinates) {
       const startCoords = routeSelect.start_point.coordinates
@@ -111,8 +115,6 @@ export default () => {
       window.map.createPoint('start', startCoords[1]!, startCoords[0]!)
       window.map.createPoint('end', endCoords[1]!, endCoords[0]!)
     }
-
-    route.current = routeSelect
   }
 
   const saveRoute = async (name: string, description?: string) => {

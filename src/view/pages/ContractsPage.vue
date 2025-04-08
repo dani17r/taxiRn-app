@@ -1,182 +1,325 @@
 <template>
-  <q-page class="!p-0 !m-0 fixed">
-    <h3 class="!text-2xl mb-5">Lista de contratos</h3>
+  <q-page class="!px-5 !m-0 fixed left-0 !w-full mobile-keyboard-fix">
+    <h3 class="!text-2xl mb-5 px-2">Lista de contratos</h3>
 
-    <q-list style="max-height: 700px; overflow-y: auto;" class="pt-2 pb-20">
-      <q-item v-for="contract in contracts" :key="contract.id" class="q-mb-md rounded-2xl border-amber-400">
-        <q-item-section>
-          <q-item-label>N° contrato: {{ contract.numero }}</q-item-label>
-          <q-item-label class="text-lg">Usuario: {{ contract.usuario }}</q-item-label>
-          <q-item-label class="text-caption">Hora: {{ contract.hora }}</q-item-label>
-          <q-item-label>
-            <q-chip :color="contract.estado == 'Activo' ? 'green': contract.estado == 'Cancelado' ? 'red': contract.estado == 'Pendiente' ? 'orange' : 'yellow'">{{ contract.estado }}</q-chip>
-          </q-item-label>
-        </q-item-section>
-        <q-item-section side top>
-          <div class="column q-gutter-y-md items-end"> <!-- Aumentado el gutter -->
-            <q-btn 
-              label="Ver Ruta" 
-              icon="map" 
-              @click="openMapDialog(contract)" 
-              color="yellow-9" 
-              unelevated 
-            />
-            <q-btn 
-              v-if="contract.estado === 'Pendiente'" 
-              label="Pagar" 
-              icon="payment" 
-              @click="openPaymentDialog(contract)" 
-              color="positive" 
-              unelevated 
-            />
-          </div>
-        </q-item-section>
-      </q-item>
-    </q-list>
+    <q-scroll-area style="height: 90vh; width: 100%" class="pb-30">
+      <q-list class="pt-2 pr-2 !w-full">
+        <q-item
+          v-for="(contract, index) in contracts"
+          :key="index"
+          class="!w-full q-mb-md border-amber-400 border-b-1"
+        >
+          <q-item-section class="!w-full">
+            <template v-if="store.auth.getRoleUser">
+              <q-item-label
+                >N° contrato: {{ contract.id_contract?.toString().slice(0, 8) }}</q-item-label
+              >
+              <q-item-label class="text-lg"
+                >Conductor: {{ contract.vehicle?.user?.fullname }}
+              </q-item-label>
+              <q-item-label class="text-caption"
+                >Vehículo: {{ contract.vehicle?.license_plate }} ({{ contract.vehicle?.brand }}
+                {{ contract.vehicle?.model }})</q-item-label
+              >
+              <q-item-label class="text-caption">
+                <template v-if="contract.route">
+                  Ruta: {{ contract.route.name || 'Sin nombre' }}
+                </template>
+                <template v-else-if="contract.location">
+                  Ubicación: {{ contract.location.name || 'Sin nombre' }}
+                </template>
+                <template v-else> Sin ubicación definida </template>
+              </q-item-label>
+              <q-item-label class="text-caption"
+                >Fecha/Hora: {{ formatDate(String(contract.created_at)) }}</q-item-label
+              >
+              <q-item-label class="absolute right-0 top-0">
+                <q-chip class="" :color="getStatusColor(contract.status)">{{
+                  translateStatus(contract.status)
+                }}</q-chip>
+              </q-item-label>
+              <q-item-label class="text-caption"
+                >Precio:
+                {{
+                  contract.status != 'pending' && contract.price
+                    ? '$' + contract.price?.toFixed(2) || '0.00'
+                    : 'Sin asignar'
+                }}
+              </q-item-label>
+            </template>
+            <template v-else>
+              <q-item-label
+                >N° contrato: {{ contract.id_contract?.toString().slice(0, 8) }}</q-item-label
+              >
+              <q-item-label class="text-lg">Cliente: {{ contract.client?.fullname }}</q-item-label>
+              <q-item-label class="text-caption"
+                >Teléfono: {{ contract.client?.phone }}</q-item-label
+              >
+              <q-item-label class="text-caption">
+                <template v-if="contract.route">
+                  Ruta: {{ contract.route.name || 'Sin nombre' }}
+                </template>
+                <template v-else-if="contract.location">
+                  Ubicación: {{ contract.location.name || 'Sin nombre' }}
+                </template>
+                <template v-else> Sin ubicación definida </template>
+              </q-item-label>
+              <q-item-label class="text-caption"
+                >Fecha/Hora: {{ formatDate(String(contract.created_at)) }}</q-item-label
+              >
+              <q-item-label class="absolute right-0 top-0">
+                <q-chip class="" :color="getStatusColor(contract.status)">{{
+                  translateStatus(contract.status)
+                }}</q-chip>
+              </q-item-label>
+              <q-item-label class="text-caption !mt-3"
+                >Precio:
+                <span
+                  v-html="
+                    contract.status !== 'pending' && contract.price
+                      ? '$' + contract.price?.toFixed(2) || '0.00'
+                      : '<div class=\'inline bg-red text-white py-1 px-2 rounded-full\'>Debes Asignarlo</div>'
+                  "
+                >
+                </span>
+              </q-item-label>
+            </template>
 
-    <!-- Modal Mapa -->
-    <q-dialog v-model="mapDialogVisible" maximized>
-      <q-card>
-        <q-toolbar class="bg-yellow-9 text-white">
-          <q-toolbar-title>
-            Ruta del Contrato N° {{ selectedContract?.numero }}
-          </q-toolbar-title>
-          <q-btn flat round dense icon="close" v-close-popup />
-        </q-toolbar>
+            <q-item-label class="py-3">
+              <div class="flex gap-4">
+                <q-btn
+                  label="Ver Detalles"
+                  icon="map"
+                  @click="openMapDialog(contract)"
+                  color="yellow-9"
+                  outline
+                  unelevated
+                  no-caps
+                />
+                <q-btn
+                  v-if="['accepted'].includes(contract.status) && store.auth.getRoleUser"
+                  label="Pagar"
+                  icon="payment"
+                  outline
+                  @click="openPaymentDialog(contract)"
+                  color="positive"
+                  unelevated
+                  no-caps
+                />
+                <q-btn
+                  v-if="
+                    !['cancelled', 'verified', 'completed'].includes(contract.status) &&
+                    store.auth.getRoleUser
+                  "
+                  label="Rechazar"
+                  icon="cancel"
+                  @click="cancelContract(contract)"
+                  color="red"
+                  outline
+                  no-caps
+                />
+              </div>
+            </q-item-label>
+          </q-item-section>
+        </q-item>
 
-        <q-card-section class="q-pa-none" style="height: calc(100vh - 50px);">
-          <!-- Contenedor del Mapa (usando el ID esperado por el composable) -->
-          <div id="map" style="height: 100%; width: 100%;"></div>
-        </q-card-section>
-      </q-card>
-      <!-- Se elimina el link CSS de Leaflet, ya que el composable debería manejar dependencias -->
-    </q-dialog>
+        <q-item v-if="!contracts.length">
+          <q-item-section class="text-center text-grey-6 q-py-lg">
+            No se encontraron contratos.
+          </q-item-section>
+        </q-item>
+      </q-list>
+    </q-scroll-area>
+
+    <!-- Modal Detalles -->
+    <DetailsContractDialog
+      v-if="selectedContract"
+      v-model="mapDialogVisible"
+      :contract="selectedContract"
+      @update="fetchContracts"
+    />
 
     <!-- Modal Pago -->
-    <q-dialog v-model="paymentDialogVisible" class="backdrop-blur-[3px]">
-      <q-card style="min-width: 350px">
-        <q-card-section>
-          <div class="text-h6">Registrar Pago - Contrato N° {{ selectedContract?.numero }}</div>
-        </q-card-section>
-
-        <q-card-section class="q-pt-none q-gutter-y-md">
-          <q-file
-            v-model="paymentImage"
-            label="Adjuntar imagen de referencia"
-            outlined
-            dense
-            accept="image/*"
-          >
-            <template v-slot:prepend>
-              <q-icon name="attach_file" />
-            </template>
-          </q-file>
-          <q-input
-            v-model="paymentReference"
-            label="Número de Referencia"
-            outlined
-            dense
-          />
-        </q-card-section>
-
-        <q-card-actions align="right">
-          <q-btn flat label="Cancelar" color="negative" v-close-popup />
-          <q-btn 
-            label="Confirmar Pago" 
-            color="positive" 
-            @click="confirmPayment" 
-            :disable="!paymentReference || !paymentImage" 
-          />
-        </q-card-actions>
-      </q-card>
-    </q-dialog>
-
+    <PaymentDialog
+      ref="paymentDialog"
+      :amount="Number(selectedContract?.price) || 0"
+      :contract-id="String(selectedContract?.id)"
+      :contract-number-id="String(selectedContract?.id_contract)"
+      :service-type="String(translateServiceType(String(selectedContract?.service_type)))"
+      :created-at="String(selectedContract?.created_at)"
+      @update="fetchContracts"
+    />
   </q-page>
 </template>
 
 <script lang="ts" setup>
-import { ref, nextTick } from 'vue';
-import { useQuasar } from 'quasar';
-// import mapComposable from '@composables/map'; // Importar el composable del mapa
+import DetailsContractDialog from '@modules/contract/DetailsContractDialog.vue'
+import PaymentDialog from '@modules/payment/PaymentDialog.vue'
+import type { ContractWithShipT } from '@interfaces/contract'
+import { translateServiceType } from '@utils/servicesTypes'
+import { supabase } from '@services/supabase.services'
+import useSuperComposable from '@composables/super'
+import { ref, onMounted } from 'vue'
+import { useQuasar } from 'quasar'
 
-const $q = useQuasar();
-// const { initMap, map: mapInstanceComposable } = mapComposable(); // Obtener funciones del composable
+const $q = useQuasar()
+const { store } = useSuperComposable()
 
-// Estado de los modales
-const mapDialogVisible = ref(false);
-const paymentDialogVisible = ref(false);
+// Estado
+const mapDialogVisible = ref(false)
+const selectedContract = ref<ContractWithShipT>()
+const contracts = ref<ContractWithShipT[]>([])
+const loading = ref(true)
+const paymentDialog = ref()
 
-// Datos para los modales
-const selectedContract = ref<Contract | null>(null);
-const paymentImage = ref<File | null>(null);
-const paymentReference = ref<string>('');
-
-// Interfaz del Contrato
-interface Contract {
-  id: number;
-  numero: string;
-  usuario: string;
-  hora: string;
-  estado: string; // 'Activo', 'Pendiente', 'Completado', 'Cancelado'
+const openMapDialog = (contract: ContractWithShipT) => {
+  selectedContract.value = contract
+  mapDialogVisible.value = true
 }
 
-// Datos de ejemplo (se mantienen los mismos)
-const contracts = ref<Contract[]>([
-  { id: 1, numero: '001', usuario: 'Juan Perez', hora: '10:00 AM', estado: 'Activo' },
-  { id: 2, numero: '002', usuario: 'Maria Lopez', hora: '11:00 AM', estado: 'Pendiente' },
-  { id: 3, numero: '003', usuario: 'Carlos Sanchez', hora: '12:00 PM', estado: 'Completado' },
-  { id: 4, numero: '004', usuario: 'Ana Gomez', hora: '01:00 PM', estado: 'Cancelado' },
-  { id: 5, numero: '005', usuario: 'Luis Fernandez', hora: '02:00 PM', estado: 'Activo' },
-  { id: 6, numero: '006', usuario: 'Laura Martinez', hora: '03:00 PM', estado: 'Pendiente' },
-]);
+// Formatear fechas
+const formatDate = (dateString: string) => {
+  const date = new Date(dateString)
+  return (
+    date.toLocaleDateString('es-ES', {
+      day: '2-digit',
+      month: '2-digit',
+      year: 'numeric',
+    }) +
+    ' - ' +
+    date.toLocaleTimeString('es-ES', {
+      hour: '2-digit',
+      minute: '2-digit',
+      hour12: true,
+    })
+  )
+}
 
-// Funciones para abrir modales
-const openMapDialog = async (contract: Contract) => {
-  selectedContract.value = contract;
-  mapDialogVisible.value = true;
-  // Esperar a que el DOM del modal esté listo antes de inicializar el mapa
-  await nextTick();
-  // Llamar a la función initMap del composable
-  // initMap(); 
-  // Forzar redimensionamiento por si acaso
-  setTimeout(() => {
-      // mapInstanceComposable?.invalidateSize();
-  }, 100);
-  // TODO: Cargar la ruta específica del contrato 'selectedContract.value' en el mapa
-  // Esto requerirá probablemente una nueva función en el composable o lógica adicional aquí.
-  // Por ahora, solo muestra el mapa inicializado por el composable.
-};
-
-const openPaymentDialog = (contract: Contract) => {
-  selectedContract.value = contract;
-  paymentImage.value = null; // Resetear campos
-  paymentReference.value = '';
-  paymentDialogVisible.value = true;
-};
-
-// Función para confirmar pago (simulada)
-const confirmPayment = () => {
-  console.log('Confirmando pago para contrato:', selectedContract.value?.numero);
-  console.log('Referencia:', paymentReference.value);
-  console.log('Imagen:', paymentImage.value);
-
-  // TODO: Implementar lógica real de subida de imagen y actualización de estado del contrato
-
-  $q.notify({
-    type: 'positive',
-    message: `Pago para contrato ${selectedContract.value?.numero} registrado (simulado).`,
-  });
-
-  paymentDialogVisible.value = false; // Cerrar modal
-  
-  // Opcional: Actualizar estado del contrato en la lista localmente
-  const index = contracts.value.findIndex(c => c.id === selectedContract.value?.id);
-  if (index !== -1) {
-    // Simular cambio a un estado como 'Procesando Pago' o similar si es necesario
-    // contracts.value[index].estado = 'Procesando Pago'; 
+// Traducir estados
+const translateStatus = (status: string) => {
+  const statusMap: Record<string, string> = {
+    pending: 'Pendiente',
+    accepted: 'Aceptado',
+    verified: 'Verificar pago',
+    completed: 'Finalizado',
+    cancelled: 'Cancelado',
   }
-};
+  return statusMap[status] || status
+}
 
-// --- Se elimina la lógica de Leaflet local ---
+// Colores según estado
+const getStatusColor = (status: string) => {
+  const colorMap: Record<string, string> = {
+    pending: 'orange',
+    accepted: 'blue',
+    verified: 'pink',
+    completed: 'green',
+    cancelled: 'red',
+  }
+  return colorMap[status] || 'grey'
+}
 
+// Obtener contratos con relaciones
+const fetchContracts = async () => {
+  try {
+    loading.value = true
+
+    // Verificar si hay usuario autenticado
+    if (!store.auth.current) {
+      throw new Error('Usuario no autenticado')
+    }
+
+    // Consulta base
+    let query = supabase
+      .from('contracts')
+      .select(
+        `
+        *,
+        client:client_id (id, fullname, phone),
+        vehicle:vehicle_id (*, user:user_id (fullname, phone)),
+        route:route_id (id, name, description),
+        location:location_id (id, name, description)
+      `,
+      )
+      .order('created_at', { ascending: false })
+
+    if (store.auth.getRoleDriver) {
+      query = query.eq('vehicle.user_id', String(store.auth.current?.id))
+    } else if (store.auth.getRoleUser) {
+      query = query.eq('client_id', store.auth.current.id)
+    } else if (store.auth.getRoleAdmin) {
+      // Para admins: traer todos los contratos sin filtro
+    } else {
+      throw new Error('Rol de usuario no reconocido')
+    }
+
+    const { data, error } = await query
+
+    if (error) throw error
+
+    contracts.value = (data as ContractWithShipT[]) || []
+  } catch (err) {
+    $q.notify({
+      type: 'negative',
+      message: 'Error al cargar contratos',
+      caption: (err as Error).message,
+    })
+    contracts.value = []
+  } finally {
+    loading.value = false
+  }
+}
+
+// Funciones para modales
+const openPaymentDialog = (contract: ContractWithShipT) => {
+  selectedContract.value = contract
+  paymentDialog.value?.open()
+}
+
+const cancelContract = (contract: ContractWithShipT) => {
+  const cancelContractAsync = async (contract: ContractWithShipT) => {
+    try {
+      const { error } = await supabase
+        .from('contracts')
+        .update({
+          status: 'cancelled',
+          updated_at: new Date().toISOString(),
+        })
+        .eq('id', contract.id)
+
+      if (error) throw error
+
+      $q.notify({
+        type: 'positive',
+        message: `Contrato ${contract.id?.slice(0, 8)} cancelado correctamente`,
+      })
+
+      // Actualizar lista
+      await fetchContracts()
+    } catch (err) {
+      $q.notify({
+        type: 'negative',
+        message: 'Error al cancelar contrato',
+        caption: (err as Error).message,
+      })
+    }
+  }
+
+  $q.dialog({
+    title: 'Confirmar Cancelación',
+    message: `¿Estás seguro de que deseas cancelar el contrato ${contract.id?.slice(0, 8)}?`,
+    cancel: false,
+    persistent: false,
+    color: 'yellow-9',
+    class: '!shadow-none bg-one',
+    ok: 'Si',
+  }).onOk(() => {
+    void cancelContractAsync(contract)
+  })
+}
+
+// Cargar datos al montar
+onMounted(async () => {
+  await fetchContracts()
+})
 </script>

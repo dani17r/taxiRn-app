@@ -20,6 +20,14 @@ export default () => ({
       },
     },
     {
+      path: 'admin-payment',
+      name: 'admin-payment',
+      component: () => import('@pages/admin/AdminPaymentsPage.vue'),
+      meta: {
+        roles: [UserRoleI.ADMIN],
+      },
+    },
+    {
       path: 'admin-vehiculos',
       name: 'admin-vehicles',
       component: () => import('@pages/admin/vehiclesPage.vue'),

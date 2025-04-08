@@ -93,6 +93,7 @@
           :rules="[required]"
           class="mb-8"
           autogrow
+           color="yellow-9"
         />
         <q-btn
           color="yellow-9"

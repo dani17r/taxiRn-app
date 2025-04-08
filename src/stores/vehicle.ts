@@ -3,6 +3,7 @@ import supabase from '@services/supabase.services'
 import type { StateI, InputsI } from '@interfaces/vehicle'
 import { useQuasar } from 'quasar'
 import notification from '@utils/notification'
+import { omit } from 'lodash'
 
 const notify = notification()
 
@@ -45,15 +46,16 @@ export const useVehicleStore = defineStore('vehicleStore', {
 
         if (this.current?.id) {
           // Actualización
-          const { data, error } = await supabase
+
+          const updateData = omit(payload, ['images', 'user_id', 'created_at', 'id'])
+
+          const { error } = await supabase
             .from('vehicles')
-            .update({ ...payload, updated_at: new Date() })
+            .update({ ...updateData })
             .eq('id', this.current.id)
             .select()
-            .single()
 
           if (error) throw error
-          result = data
         } else {
           // Creación
           const { data, error } = await supabase
@@ -86,7 +88,7 @@ export const useVehicleStore = defineStore('vehicleStore', {
       try {
         const { data, error } = await supabase
           .from('vehicles')
-          .update({ ...updates, updated_at: new Date() })
+          .update({ ...updates })
           .eq('id', this.current.id)
           .select()
           .single()

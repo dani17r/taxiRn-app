@@ -1,60 +1,40 @@
 <template>
-  <q-page class="fixed left-0 top-13 w-full h-screen">
+  <q-page class="fixed left-0 top-13 w-full h-screen mobile-keyboard-fix">
+     <div class="flex justify-center pt-6 w-full">
+       <h2 class="!text-3xl/1 !font-bold text-yellow-8">
+         Opciones de {{ store.auth.getRoleAdmin ? 'admin' : 'usuario' }}
+       </h2>
+     </div>
     <q-scroll-area style="height: 90vh; width: 100%" class="pb-10">
-      <div class="flex justify-center p-8 w-full">
-        <h2 class="!text-3xl !font-bold text-yellow-8">
-          Opciones de {{ store.auth.getRoleAdmin ? 'admin' : 'usuario' }}
-        </h2>
-        <!-- <q-form @submit="updateSettings" class="flex flex-col w-full p-4 gap-6">
-      <q-toggle
-        v-model="settings.dark_mode"
-        label="Modo Oscuro"
-      />
-      <q-toggle
-        v-model="settings.show_online_status"
-        label="Mostrar Estado en Línea"
-      />
-      <q-select
-        v-model="settings.profile_visibility"
-        :options="profileVisibilityOptions"
-        label="Visibilidad del Perfil"
-      />
-      <q-select
-        v-model="settings.preferred_language"
-        :options="languageOptions"
-        label="Idioma Preferido"
-      />
-      <q-input
-        v-model="settings.time_zone"
-        label="Zona Horaria"
-      />
-      <q-btn type="submit" label="Guardar Configuracion" color="yellow-9" unelevated class="w-full mt-4" />
-    </q-form> -->
+      <div class="flex justify-center px-8 w-full">
         <q-form
           @submit.prevent="updatePassword"
           @reset="resetFormPassword"
-          class="space-y-6 w-full mt-10"
+          class="space-y-4 w-full mt-8"
         >
           <h3 class="!text-2xl !font-bold my-6 !w-full text-center">Cambiar contraseña</h3>
           <q-input
             v-model="currentPassword"
             label="Contraseña actual"
             type="password"
-            :rules="[(val) => !!val || 'Campo requerido']"
+            :rules="[required]"
+             color="yellow-9"
           />
 
           <q-input
             v-model="newPassword"
             label="Nueva contraseña"
             type="password"
-            :rules="[(val) => !!val || 'Campo requerido', isValidPassword]"
+            :rules="[required, isValidPassword]"
+             color="yellow-9"
           />
 
           <q-input
             v-model="confirmPassword"
             label="Confirmar nueva contraseña"
             type="password"
-            :rules="[(val) => !!val || 'Campo requerido', passwordsMatch]"
+            :rules="[required, passwordsMatch]"
+             color="yellow-9"
           />
 
           <q-btn
@@ -87,6 +67,7 @@ import { ref } from 'vue'
 import useSuperComposable from 'src/composables/super';
 import supabase from 'src/services/supabase.services'
 import { Notify } from 'quasar'
+import { required } from '@utils/validations';
 
 const { store } = useSuperComposable()
 

@@ -11,4 +11,7 @@ export const isPermission = (to: ToRouterT, _from: FromRouterT, next: NextRouter
   removeLoading()
   if (rolesOfView.includes(UserRoleI.ALL)) next()
   if (rolesOfView.includes(authStore?.getRole || '')) next()
+  else {
+    next({ name: 'login' })
+  }
 }

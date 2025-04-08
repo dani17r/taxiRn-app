@@ -11,11 +11,12 @@ create table public.users (
   cedula varchar(255) null unique, -- Añadido UNIQUE para evitar duplicados
   description text,
   is_blocked boolean null default false,
-  phone varchar(255) null,
-  year_of_birth varchar(255) null
+  phone character varying null,
+  birthdate character varying null,
   images jsonb default '{"ground": null, "profile": null}',
   created_at timestamptz default current_timestamp,
-  updated_at timestamptz default current_timestamp
+  updated_at timestamptz default current_timestamp,
+  deleted_at timestamptz default current_timestamp,
 ) tablespace pg_default;
 
 create index if not exists idx_users_cedula on public.users(cedula); -- Índice para búsquedas por cédula
@@ -84,7 +85,7 @@ create extension if not exists postgis;
 --   - Usa columnas actualizadas (name en lugar de route_name)
 --   - Incluye campo description
 -------------------------
-create or replace function get_routes(user_id uuid)
+create or replace function get_routes(p_user_id uuid)
 returns json language sql as $$
   select coalesce(json_agg(json_build_object(
     'id', id,
@@ -96,9 +97,24 @@ returns json language sql as $$
     'path', st_asgeojson(path)
   ) order by created_at desc), '[]'::json)
   from public.routes
-  where user_id = user_id;  -- Usamos nombre de parámetro consistente
+  where user_id = p_user_id;  -- Usamos nombre de parámetro consistente
 $$;
 
+-- Función para obtener una sola ruta con datos convertidos a GeoJSON
+CREATE OR REPLACE FUNCTION public.get_route(route_id uuid)
+RETURNS json LANGUAGE sql AS $$
+  SELECT json_build_object(
+    'id', id,
+    'name', name,
+    'description', description,
+    'start_point', ST_AsGeoJSON(start_point)::json,
+    'end_point', ST_AsGeoJSON(end_point)::json,
+    'path', ST_AsGeoJSON(path)::json,
+    'created_at', created_at
+  )
+  FROM public.routes
+  WHERE id = route_id;
+$$;
 
 -------------------------
 -- Tabla: locations
@@ -123,7 +139,7 @@ create index if not exists idx_locations_geo on public.locations using gist(coor
 --   - Usa name en lugar de title
 --   - Eliminado campo duplicado created_at (ya está en el ordenamiento)
 -------------------------
-create or replace function get_locations(_user_id uuid)
+create or replace function get_locations(p_user_id uuid)
 returns json language sql as $$
   select coalesce(json_agg(json_build_object(
     'id', id,
@@ -132,9 +148,23 @@ returns json language sql as $$
     'coordinates', st_asgeojson(coordinates)
   ) order by created_at desc), '[]'::json)
   from public.locations
-  where user_id = _user_id;
+  where user_id = p_user_id;
 $$;
 
+
+-- Función para obtener una sola ubicación con datos convertidos a GeoJSON
+CREATE OR REPLACE FUNCTION public.get_location(location_id uuid)
+RETURNS json LANGUAGE sql AS $$
+  SELECT json_build_object(
+    'id', id,
+    'name', name,
+    'description', description,
+    'coordinates', ST_AsGeoJSON(coordinates)::json,
+    'created_at', created_at
+  )
+  FROM public.locations
+  WHERE id = location_id;
+$$;
 -------------------------
 -- Tabla: contracts
 -- Índices: Índices para filtros comunes (status, service_type)
@@ -146,10 +176,10 @@ create table public.contracts (
   route_id uuid references public.routes(id),
   service_type varchar(20) check (service_type in ('taxi', 'delivery', 'both')),
   status varchar(20) default 'pending' check (status in ('pending', 'accepted', 'completed', 'cancelled')),
-  pickup_location_id uuid not null references public.locations(id),
-  delivery_location_id uuid references public.locations(id),
+  location_id uuid references public.locations(id),
   price numeric(10,2),
   estimated_time interval,
+  description text null,
   created_at timestamptz default now(),
   updated_at timestamptz default now()
 ) tablespace pg_default;
@@ -157,6 +187,10 @@ create table public.contracts (
 create index if not exists idx_contracts_status on public.contracts(status);
 create index if not exists idx_contracts_service_type on public.contracts(service_type);
 create index if not exists idx_contracts_client on public.contracts(client_id);
+
+create trigger trg_notify_driver
+after INSERT on contracts for EACH row
+execute FUNCTION notify_driver_on_contract ();
 
 -------------------------
 -- Tabla: payments
@@ -176,24 +210,6 @@ create table public.payments (
 
 create index if not exists idx_payments_status on public.payments(status);
 create index if not exists idx_payments_created on public.payments(created_at);
-
--------------------------
--- Tabla: settings
--------------------------
-create table public.settings (
-  id uuid default gen_random_uuid() primary key,
-  app_name varchar(255) not null,
-  logo text null,
-  primary_color varchar(7) not null,
-  secondary_color varchar(7) not null,
-  accent_color varchar(7) not null,
-  success_color varchar(7) not null,
-  warning_color varchar(7) not null,
-  error_color varchar(7) not null,
-  info_color varchar(7) not null,
-  created_at timestamptz default now(),
-  updated_at timestamptz default now()
-) tablespace pg_default;
 
 -------------------------
 -- Tabla: notify

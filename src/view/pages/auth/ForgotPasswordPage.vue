@@ -16,6 +16,7 @@
           label="Correo electrónico"
           type="email"
           :rules="emailRules"
+          color="yellow-9"
           required
         />
         

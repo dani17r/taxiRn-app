@@ -38,6 +38,7 @@
 <script setup lang="ts">
 import type { routerLink } from '@components/EssentialLink.vue'
 import imageProfileComposable from '@composables/images'
+import useMapComposable from '@composables/map/main'
 import superComposable from '@composables/super'
 import notification from '@utils/notification'
 import roleComposable from '@composables/role'
@@ -49,6 +50,7 @@ const EssentialLink = defineAsyncComponent(() => import('@components/EssentialLi
 const { store, router: useRouter, $q } = superComposable()
 const { avatarUrl } = imageProfileComposable(store)
 const { isRoleLabel } = roleComposable()
+const { resetMap } = useMapComposable()
 const { loading } = $q()
 
 const router = useRouter()
@@ -78,9 +80,10 @@ const closeSession = async () => {
   loading.show()
   await store.auth
     .signOut()
-    .then(async () => {
-      await router.push({ name: 'login' })
+    .then(() => {
+      resetMap()
       store.reset()
+      void router.push({ name: 'login' })
     })
     .finally(() => loading.hide())
     .catch((error) => {

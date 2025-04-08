@@ -16,6 +16,7 @@
             v-model="email"
             label="Email/Correo"
             class="w-full"
+            color="yellow-9"
             :rules="[required]"
             :readonly="isEditing"
           >
@@ -24,7 +25,7 @@
             </template>
           </q-input>
 
-          <q-input v-model="fullname" label="Nombre completo" class="w-full" :rules="[required]">
+          <q-input v-model="fullname" label="Nombre completo" class="w-full" :rules="[required]"  color="yellow-9">
             <template #append>
               <q-icon name="person" color="yellow-8" />
             </template>
@@ -37,6 +38,7 @@
             v-model="password"
             label="Contraseña"
             class="w-full"
+            color="yellow-9"
             :rules="isEditing ? [] : [required]"
           >
             <template #append>
@@ -48,15 +50,47 @@
               />
             </template>
           </q-input>
-          <q-item-label v-else caption class="text-orange-700"
-            >La contraseña no se puede editar desde aquí.</q-item-label
+
+          <q-input
+            v-model="cedula"
+            label="Cédula"
+            class="w-full"
+            :rules="validationRules"
+            maxlength="10"
+            color="yellow-9"
+          />
+
+          <q-input
+            v-model="phone"
+            label="Número de teléfono"
+            mask="04##-###-####"
+            unmasked-value
+            :rules="[required, phoneNumberVe]"
+            class="w-full"
+            color="yellow-9"
+          />
+
+           <q-input
+            v-model="birthdate"
+            label="Fecha de nacimiento"
+            mask="##/##/####"
+            :rules="[validateBirthdate]"
+            class="w-full"
+            hint="DD/MM/AAAA"
+            color="yellow-9"
           >
-
-          <q-input v-model="cedula" label="Cedula" class="w-full" />
-
-          <!-- Vehicle Fields -->
-          <q-separator class="my-4" />
-          <q-toolbar-title class="text-base !text-gray-600">Datos del Vehículo</q-toolbar-title>
+            <template v-slot:append>
+              <q-icon name="event" class="cursor-pointer">
+                <q-popup-proxy cover transition-show="scale" transition-hide="scale">
+                  <q-date v-model="birthdate" mask="DD/MM/YYYY" color="yellow-9">
+                    <div class="row items-center justify-end">
+                      <q-btn v-close-popup label="Cerrar" color="primary" flat />
+                    </div>
+                  </q-date>
+                </q-popup-proxy>
+              </q-icon>
+            </template>
+          </q-input>
 
           <q-select
             v-model="vehicle_type"
@@ -68,15 +102,15 @@
             :rules="[required]"
           />
 
-          <q-input v-model="license_plate" label="Placa" :rules="[required]" class="w-full" />
+          <q-input v-model="license_plate" label="Placa"  color="yellow-9" :rules="[required]" class="w-full" />
 
-          <q-input v-model="model" label="Modelo" :rules="[required]" class="w-full" />
+          <q-input v-model="model" label="Modelo"  color="yellow-9" :rules="[required]" class="w-full" />
 
-          <q-input v-model="brand" label="Marca" :rules="[required]" class="w-full" />
+          <q-input v-model="brand" label="Marca"  color="yellow-9" :rules="[required]" class="w-full" />
 
-          <q-input v-model="year" label="Año" type="number" :rules="[required]" class="w-full" />
+          <q-input v-model="year" label="Año" type="number"  color="yellow-9" :rules="[required]" class="w-full" />
 
-          <q-input v-model="color" label="Color" :rules="[required]" class="w-full" />
+          <q-input v-model="color" label="Color"  color="yellow-9" :rules="[required]" class="w-full" />
 
           <div class="mt-0">
             <q-btn
@@ -107,24 +141,24 @@
 </template>
 
 <script setup lang="ts">
-import { required } from '@utils/validations'
-import { ref, watchEffect, computed } from 'vue'
 import { supabase } from '@services/supabase.services'
-import type { UserI } from '@interfaces/user'
+import type { DriverT, UserI } from '@interfaces/user'
 import type { VehicleI } from '@interfaces/vehicle'
-
+import { useCedula } from '@composables/useCedula'
 import superComposable from '@composables/super'
+import { ref, watchEffect, computed } from 'vue'
 import notification from '@utils/notification'
+import { phoneNumberVe, required, validateBirthdate } from '@utils/validations'
+
 
 const notify = notification()
 
-type DriverData = UserI & { vehicles: VehicleI[] }
-
 const { store } = superComposable()
+const { cedula, validationRules, resetCedula } = useCedula()
 const emit = defineEmits(['driver-created', 'driver-updated'])
 
 const props = defineProps<{
-  editingDriver?: DriverData | null
+  editingDriver?: DriverT | null
 }>()
 
 const modelValue = defineModel({ type: Boolean, default: false })
@@ -135,7 +169,8 @@ const isEditing = computed(() => !!props.editingDriver)
 const email = ref('')
 const password = ref('')
 const fullname = ref('')
-const cedula = ref('')
+const phone = ref('')
+const birthdate = ref('')
 const showPassword = ref(false)
 
 // Vehicle fields
@@ -156,12 +191,14 @@ const handleSubmit = async () => {
     if (isEditing.value && props.editingDriver) {
       // --- Update Existing Driver and Vehicle ---
       const userId = props.editingDriver.id
-      const vehicleId = props.editingDriver.vehicles?.[0]?.id
+      const vehicleId = props.editingDriver.vehicle?.id
 
       // 1. Update User Data
       const userData: Partial<UserI> = {
         fullname: fullname.value,
         cedula: cedula.value,
+        phone: phone.value,
+        birthdate: birthdate.value,
       }
       const { error: userError } = await supabase.from('users').update(userData).eq('id', userId)
       if (userError) throw userError
@@ -198,7 +235,7 @@ const handleSubmit = async () => {
         return
       }
       // Use the existing newUser action which handles user and vehicle creation
-      await store.auth.signUp(
+      await store.auth.newUser(
         {
           email: email.value,
           password: password.value,
@@ -255,7 +292,9 @@ const onReset = () => {
     email.value = props.editingDriver.email || ''
     fullname.value = props.editingDriver.fullname || ''
     cedula.value = props.editingDriver.cedula || ''
-    const vehicle = props.editingDriver.vehicles?.[0]
+    phone.value = props.editingDriver.phone || ''
+    birthdate.value = props.editingDriver.birthdate || ''
+    const vehicle = props.editingDriver.vehicle
     if (vehicle) {
       license_plate.value = vehicle.license_plate || ''
       model.value = vehicle.model || ''
@@ -274,8 +313,10 @@ const onReset = () => {
   } else {
     // If creating, reset all fields to empty/default
     email.value = ''
+    birthdate.value = ''
+    phone.value = ''
     fullname.value = ''
-    cedula.value = ''
+    resetCedula()
     license_plate.value = ''
     model.value = ''
     brand.value = ''
@@ -293,10 +334,12 @@ watchEffect(() => {
     email.value = props.editingDriver.email || ''
     fullname.value = props.editingDriver.fullname || ''
     cedula.value = props.editingDriver.cedula || ''
+    birthdate.value = props.editingDriver.birthdate || ''
+    phone.value = props.editingDriver.phone || ''
     password.value = '' // Clear password
 
     // Populate vehicle fields (assuming one vehicle per driver for now)
-    const vehicle = props.editingDriver.vehicles?.[0]
+    const vehicle = props.editingDriver.vehicle
     if (vehicle) {
       license_plate.value = vehicle.license_plate || ''
       model.value = vehicle.model || ''

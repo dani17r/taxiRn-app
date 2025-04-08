@@ -21,44 +21,19 @@ export const useAuthStore = defineStore('authStore', {
     getRoleUser: (state) => String(state.current?.role || '') == String(UserRoleI.USER),
     getRoleAdmin: (state) => String(state.current?.role || '') == String(UserRoleI.ADMIN),
     getRoleDriver: (state) => String(state.current?.role || '') == String(UserRoleI.DRIVER),
-    getRole: (state) => state.current!.role || '',
+    getRole: (state) => state.current?.role || '',
+    isBlocked: (state) => Boolean(state.current?.is_blocked),
   },
   actions: {
     // Register
-    async newUser(user: InputsI['RegisterI'], action?: ActionT) {
-      await supabase.auth
-        .signUp({ email: user.email, password: user.password })
-        .then(async ({ data: dataAuth, error }) => {
-          if (error) return notify.errorCatch(error) // Use errorCatch
-          if (dataAuth) {
-            await supabase
-              .from('users')
-              .insert([
-                {
-                  fullname: user.fullname,
-                  user_id: dataAuth.user?.id,
-                  email: user.email,
-                  cedula: user.cedula,
-                  role: user.role || 'user',
-                },
-              ])
-              .select()
-              .then(({ data: dataUser, error }) => {
-                if (error) return notify.errorCatch(error) // Use errorCatch
-                if (action) action(dataUser[0] as UserI)
-              })
-          }
-        })
-    },
-
-    async signUp(user: InputsI['RegisterI'], action?: (id: string) => void) {
+    async newUser(user: InputsI['RegisterI'], action?: (id: string) => void) {
       try {
         const { data: user_id, error } = await supabase.rpc('add_new_user', {
-          email: user.email,
-          password: user.password,
-          fullname: user.fullname,
-          cedula: user.cedula,
-          role: user.role,
+          p_email: user.email,
+          p_password: user.password,
+          p_fullname: user.fullname,
+          p_cedula: user.cedula,
+          p_role: user.role || 'user',
         })
 
         if (error) throw error

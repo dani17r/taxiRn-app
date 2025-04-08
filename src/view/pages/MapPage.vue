@@ -1,5 +1,5 @@
 <template>
-  <q-page class="fixed left-0 top-13 w-full h-screen">
+  <q-page class="fixed left-0 top-13 w-full h-screen mobile-keyboard-fix">
     <div id="map" class="h-screen w-full"></div>
 
     <q-btn
@@ -8,13 +8,13 @@
       icon="close"
       class="fixed bottom-32 right-3 z-1000"
       @click="dialogs.resetMap.togle()"
-      :disable="!isLocation"
+      :disable="!isLocation && !isRoute || !isStateLocation"
     />
 
     <q-btn
       class="q-ma-md fixed top-9 -right-3 z-1000 text-grey-8 !shadow-0 opacity-70"
       :disable="disbleButtonLocation"
-      @click="getCurrentLocation()"
+      @click="getCurrentLocationAction"
       label="Obtener Ubicación"
       icon="my_location"
       color="white"
@@ -45,13 +45,17 @@
 <script setup lang="ts">
 import MenuDialogsOptionsMap from '@modules/map/MenuDialogsOptionsMap.vue'
 import useLocationComposable from '@composables/map/useLocation'
+import useRouteComposable from '@composables/map/useRoute'
+import useMapStateComposable from '@composables/map/state'
 import useMapComposable from '@composables/map/main'
 import useTabsComposable from '@composables/tabs'
 import { onMounted, reactive } from 'vue'
 
 const { tabs } = useTabsComposable()
 const { getCurrentLocation, disbleButtonLocation } = useLocationComposable()
-const { initMap, resetMap, isLocation } = useMapComposable()
+const { initMap, resetMap, isLocation, } = useMapComposable()
+const { isStateLocation } = useMapStateComposable()
+const { isRoute } = useRouteComposable()
 
 const dialogs = reactive({
   resetMap: {
@@ -60,9 +64,24 @@ const dialogs = reactive({
   },
 })
 
+const getCurrentLocationAction = async () => {
+  disbleButtonLocation.value = true;
+
+  try {
+    await getCurrentLocation();
+  } finally {
+    setTimeout(() => {
+      disbleButtonLocation.value = false;
+    }, 1000);
+  }
+};
+
 onMounted(() => {
   if (tabs.select === 'map') {
-    initMap()
+    const div = document.querySelector('body>#map');
+    if (div) div.remove();
+    
+    initMap();
   }
 })
 </script>

@@ -1,3 +1,5 @@
+import type { UserI } from './user'
+
 export interface VehicleImagesI {
   ground?: string | null
 }
@@ -15,6 +17,8 @@ export interface VehicleI {
   created_at: Date
   images: VehicleImagesI
 }
+
+export type VehicleWithShipT = VehicleI & { user?: Partial<UserI> }
 
 export interface StateI {
   lifecycles: {

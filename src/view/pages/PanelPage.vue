@@ -1,10 +1,10 @@
 <template>
-  <q-page class="fixed left-0 top-13 w-full h-screen">
-    <q-scroll-area style="height: 90vh; width: 100%" class="pb-10">
+  <q-page class="fixed left-0 top-13 w-full h-screen mobile-keyboard-fix">
+    <div class="flex justify-center px-6 my-3 w-full">
+      <h1 class="!text-4xl text-yellow-9">Panel de Control</h1>
+    </div>
+    <q-scroll-area style="height: 90vh; width: 100%" class="pb-30">
       <div class="q-pa-md">
-        <div class="flex justify-center p-8 w-full">
-          <h1 class="!text-4xl text-yellow-9">Panel de Control</h1>
-        </div>
 
         <!-- Estadísticas Rápidas -->
         <div class="row">
@@ -57,7 +57,7 @@
                 <q-item v-for="user in latestUsers" :key="user.id">
                   <q-item-section avatar>
                     <q-avatar color="yellow-9" text-color="white">
-                      {{ user.initials }}
+                      {{ getInitials(user.fullname) }}
                     </q-avatar>
                   </q-item-section>
                   <q-item-section>
@@ -79,6 +79,7 @@ import { ref, onMounted } from 'vue';
 import { supabase } from '@services/supabase.services';
 import { formatDistanceToNow } from 'date-fns';
 import { es } from 'date-fns/locale';
+import { getInitials } from '@utils/actions';
 
 const stats = ref({
   totalUsers: 0,
@@ -90,10 +91,6 @@ const stats = ref({
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const latestUsers = ref<any[]>([]);
-
-const getInitials = (name: string) => {
-  return name.split(' ').map(part => part[0]).join('').toUpperCase();
-};
 
 const timeAgo = (dateString: string) => {
   return formatDistanceToNow(new Date(dateString), {
@@ -107,7 +104,8 @@ const fetchStats = async () => {
     // Total de usuarios
     const { count: totalUsers } = await supabase
       .from('users')
-      .select('*', { count: 'exact', head: true });
+      .select('*', { count: 'exact', head: true })
+      .is('deleted_at', null)
     
     // Conductores activos (usuarios con vehículos activos)
     const { count: activeDrivers } = await supabase
@@ -119,18 +117,21 @@ const fetchStats = async () => {
     const { count: totalUsersRoleUser } = await supabase
       .from('users')
       .select('*', { count: 'exact', head: true })
-      .eq('role', 'user');
+      .eq('role', 'user')
+      .is('deleted_at', null) 
 
     // Usuarios con rol "driver"
     const { count: totalUsersRoleDriver } = await supabase
       .from('users')
       .select('*', { count: 'exact', head: true })
-      .eq('role', 'driver');
+      .eq('role', 'driver')
+      .is('deleted_at', null) 
 
     const { count: totalUsersRoleAdmin } = await supabase
       .from('users')
       .select('*', { count: 'exact', head: true })
-      .eq('role', 'admin');
+      .eq('role', 'admin')
+      .is('deleted_at', null)
 
     stats.value = {
       totalUsers: totalUsers || 0,
@@ -149,14 +150,12 @@ const fetchLatestUsers = async () => {
     const { data } = await supabase
       .from('users')
       .select('*')
+      .is('deleted_at', null)
       .order('created_at', { ascending: false })
       .limit(5);
 
     if (data) {
-      latestUsers.value = data.map(user => ({
-        ...user,
-        initials: getInitials(user.fullname)
-      }));
+      latestUsers.value = data
     }
   } catch (error) {
     console.error('Error fetching latest users:', error);

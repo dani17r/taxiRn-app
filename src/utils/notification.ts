@@ -15,6 +15,7 @@ export default () => ({
     Notify.create({
       message: message,
       position: 'top-right',
+      progressClass: '!shadow-none',
       type: 'negative',
     }),
 

@@ -1,5 +1,5 @@
 <template>
-  <q-page class="p-6">
+  <q-page class="p-6 mobile-keyboard-fix">
     <h1 class="!text-2xl font-bold mb-6">Gestión de Vehículo</h1>
 
     <q-form @submit.prevent="handleSubmit" class="space-y-4">
@@ -20,33 +20,35 @@
           @update:model-value="handleImageUpload"
           label="Cambiar Portada"
           accept=".jpg, .png, .jpeg"
-          class="w-full mod-input -mt-8"
+          class="-mt-8"
+          dense
           v-model="currentFile"
           borderless
           max-files="1"
         />
 
 
-      <q-input :model-value="store.auth.current?.fullname" label="Conductor" readonly disable />
+      <q-input :model-value="store.auth.current?.fullname" label="Conductor" readonly disable   color="yellow-9"/>
 
-      <q-input :model-value="store.auth.current?.cedula" label="Cedula" readonly disable />
+      <q-input :model-value="store.auth.current?.cedula" label="Cedula" readonly disable   color="yellow-9"/>
 
       <q-input
         :model-value="store.auth.current?.description"
         label="Descripcion"
         readonly
-        disable
+        disable  
+        color="yellow-9"
       />
 
-      <q-input v-model="form.license_plate" label="Placa" :rules="[required]" />
+      <q-input v-model="form.license_plate" label="Placa" :rules="[required]"  color="yellow-9"/>
 
-      <q-input v-model="form.model" label="Modelo" :rules="[required]" />
+      <q-input v-model="form.model" label="Modelo" :rules="[required]"  color="yellow-9"/>
 
-      <q-input v-model="form.brand" label="Marca" :rules="[required]" />
+      <q-input v-model="form.brand" label="Marca" :rules="[required]"  color="yellow-9"/>
 
-      <q-input v-model="form.year" label="Año" type="number" />
+      <q-input v-model="form.year" label="Año" type="number" color="yellow-9"/>
 
-      <q-input v-model="form.color" label="Color" :rules="[required]" />
+      <q-input v-model="form.color" label="Color" :rules="[required]" color="yellow-9" />
 
       <q-select
         v-model="form.vehicle_type"
@@ -157,7 +159,6 @@ const handleImageUpload = async (file: File) => {
     loading.value = false
   }
 }
-
 
 onMounted(async () => {
   if (store.auth.current?.user_id) {

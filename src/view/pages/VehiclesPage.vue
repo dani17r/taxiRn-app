@@ -1,5 +1,5 @@
 <template>
-  <q-page class="fixed left-0 top-13 w-full h-screen">
+  <q-page class="fixed left-0 top-13 w-full h-screen mobile-keyboard-fix">
     <!-- Filtros y búsqueda -->
     <div class="row px-4">
       <div class="col-12 col-sm-6">
@@ -9,6 +9,7 @@
           clearable
           debounce="300"
           dense
+          color="yellow-9"
         >
           <template v-slot:append>
             <q-icon name="search" />
@@ -32,7 +33,14 @@
         <q-item v-for="driver in drivers" :key="driver.id" class="q-py-md flex flex-col">
           <div>
             <q-img
-              :src="driver.vehicles[0]?.images ? imageVehiclesUrls({ ...driver.vehicles[0].images, ground: driver.vehicles[0].images.ground || null }) : ''"
+              :src="
+                driver.vehicle?.images
+                  ? imageVehiclesUrls({
+                      ...driver.vehicle?.images,
+                      ground: driver.vehicle?.images.ground || null,
+                    })
+                  : ''
+              "
               :ratio="16 / 9"
               spinner-color="primary"
               spinner-size="82px"
@@ -42,7 +50,13 @@
             <q-item-section avatar class="absolute right-5 top-43">
               <q-avatar size="70px">
                 <q-img
-                  :src="avatarsUrls({ profile: driver.images?.profile || null, ground: '' }, driver.fullname)" referrerpolicy="no-referrer"
+                  :src="
+                    avatarsUrls(
+                      { profile: driver.images?.profile || null, ground: '' },
+                      driver.fullname,
+                    )
+                  "
+                  referrerpolicy="no-referrer"
                 />
               </q-avatar>
             </q-item-section>
@@ -57,19 +71,19 @@
               </q-item-label>
               <q-item-label caption lines="1">
                 <q-icon name="phone" size="xs" class="q-mr-xs" /> Teléfono:
-                {{ driver.phone || 'No registrado' }}
+                {{ driver.phone ? formatPhone('04' + driver.phone) : 'No registrado' }}
               </q-item-label>
 
               <!-- Detalles del Vehículo -->
-              <div v-if="driver.vehicles[0]" class="q-mt-sm text-caption">
+              <div v-if="driver.vehicle" class="q-mt-sm text-caption">
                 <div class="text-weight-medium q-mb-xs">
-                  Vehículo: {{ driver.vehicles[0].vehicle_type === 'car' ? 'Carro' : 'Moto' }}
+                  Vehículo: {{ driver.vehicle.vehicle_type === 'car' ? 'Carro' : 'Moto' }}
                 </div>
                 <div class="row items-center q-mb-xs">
                   <q-icon name="directions_car" class="q-mr-sm" size="xs" />
                   <span
-                    >{{ driver.vehicles[0].brand }} {{ driver.vehicles[0].model }} ({{
-                      driver.vehicles[0].year
+                    >{{ driver.vehicle.brand }} {{ driver.vehicle.model }} ({{
+                      driver.vehicle.year
                     }})</span
                   >
                 </div>
@@ -82,6 +96,7 @@
             <div class="flex mt-3 gap-3">
               <!-- Botón Contratar -->
               <q-btn
+                v-if="store.auth.getRoleUser"
                 icon="handshake"
                 color="yellow-9"
                 @click="openMapModal(driver)"
@@ -89,7 +104,6 @@
                 aria-label="Contratar"
                 unelevated
               >
-                <q-tooltip>Contratar</q-tooltip>
               </q-btn>
               <q-btn
                 icon="visibility"
@@ -97,8 +111,8 @@
                 label="Ver"
                 aria-label="Ver el vehiculo"
                 unelevated
+                @click="openDriverModal(driver)"
               >
-                <q-tooltip>Contratar</q-tooltip>
               </q-btn>
             </div>
           </div>
@@ -133,24 +147,34 @@
     </div>
 
     <!-- Modal del Mapa -->
-   <DialogContractDriver v-model="dialogs.viewContract.value" :driver="selectedDriver" />
+    <DialogContractDriver v-model="dialogs.viewContract.value" :driver="selectedDriver" />
+    <DialogViewDriver
+      v-if="selectedDriver"
+      v-model="dialogs.viewDriver.value"
+      :driver="selectedDriver"
+      @contract="openMapModal(selectedDriver)"
+    />
   </q-page>
 </template>
 
 <script setup lang="ts">
 import DialogContractDriver from '@modules/vehicle/DialogContractDriver.vue'
-import { supabase } from '@services/supabase.services'
+import DialogViewDriver from '@modules/vehicle/DialogViewDriver.vue'
 import { ref, computed, watchEffect, reactive } from 'vue'
-import { useQuasar } from 'quasar'
-import type { DriverT } from '@interfaces/user'
+import { supabase } from '@services/supabase.services'
 import useImagesComposable from '@composables/images'
+import useSuperComposable from '@composables/super'
+import type { DriverT } from '@interfaces/user'
+import { formatPhone } from '@utils/numbers'
+import { useQuasar } from 'quasar'
 
 const $q = useQuasar()
+const { store } = useSuperComposable()
 const { imageVehiclesUrls, avatarsUrls } = useImagesComposable()
 
 const selectedLocationInfo = ref<string | null>(null)
 const vehicleTypeFilter = ref<string | null>(null)
-const selectedDriver = ref<DriverT|null>(null)
+const selectedDriver = ref<DriverT | null>(null)
 const drivers = ref<DriverT[]>([])
 const serviceDescription = ref('')
 const itemsPerPage = ref(10)
@@ -164,7 +188,16 @@ const dialogs = reactive({
     value: false,
     toggle: () => (dialogs.viewContract.value = !dialogs.viewContract.value),
   },
+  viewDriver: {
+    value: false,
+    toggle: () => (dialogs.viewDriver.value = !dialogs.viewDriver.value),
+  },
 })
+
+const openDriverModal = (driver: DriverT) => {
+  selectedDriver.value = driver
+  dialogs.viewDriver.toggle()
+}
 
 const vehicleTypeOptions = [
   { label: 'Carro', value: 'car' },
@@ -176,10 +209,20 @@ const resetModal = () => {
   selectedLocationInfo.value = null
 }
 
-const openMapModal = (driver: DriverT) => {
+const openMapModal = async (driver: DriverT) => {
+  await supabase.auth.getUser()
+  if (store.auth.isBlocked) {
+    return $q.dialog({
+      cancel: false,
+      ok: false,
+      message: 'Tu usuario fue bloqueado.',
+      class: '!shadow-none bg-one',
+    })
+  }
+
   selectedDriver.value = driver
   dialogs.viewContract.toggle()
-  resetModal() 
+  resetModal()
 }
 
 // Cálculos
@@ -199,12 +242,14 @@ async function fetchDrivers() {
 
     const { data, error, count } = await supabase
       .from('users')
-      .select('*, vehicles(*)', { count: 'exact' })
+      .select('*, vehicle:vehicles!user_id!inner (*)', { count: 'exact' })
       .eq('role', 'driver')
+      .is('deleted_at', null)
       .range(from, to)
       .order('created_at', { ascending: false })
       .or(`fullname.ilike.%${searchQuery.value}%,cedula.ilike.%${searchQuery.value}%`)
-      .filter(vehicleTypeFilter.value ? 'vehicles.vehicle_type' : '', 'eq', vehicleTypeFilter.value)
+      .eq('vehicles.is_active', true)
+      .filter(vehicleTypeFilter.value ? 'vehicle.vehicle_type' : '', 'eq', vehicleTypeFilter.value)
 
     if (error) throw error
 

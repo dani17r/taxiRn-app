@@ -5,7 +5,7 @@ import routeMap from '@composables/map/useRoute'
 import superComposable from '@composables/super'
 import stateMap from '@composables/map/state'
 import { computed, ref } from 'vue'
-import { Notify } from 'quasar'
+import { Loading, Notify } from 'quasar'
 
 export default () => {
   const { location, route, map, L } = stateMap()
@@ -15,7 +15,7 @@ export default () => {
   const disbleButtonLocation = ref(false)
 
   const getPermission = async (): Promise<boolean> => {
-    disbleButtonLocation.value = false
+    disbleButtonLocation.value = true
     try {
       const { location } = await Geolocation.checkPermissions()
       if (location === 'granted') return true
@@ -46,15 +46,26 @@ export default () => {
     }
   }
 
-  const getCurrentLocation = async (): Promise<void> => {
-    if (!map.value) return
-
-    const isPermision = await getPermission()
-    if (!isPermision) return
+  const getCurrentLocation = async () => {
+    if (!map.value) {
+      Notify.create({ type: 'warning', message: 'El mapa no está listo' })
+      return false
+    }
 
     try {
+      Loading.show()
+
+      const isPermission = await getPermission()
+      if (!isPermission) {
+        Notify.create({ type: 'warning', message: 'Permiso de ubicación denegado' })
+        return false
+      }
+
       const position = await Geolocation.getCurrentPosition()
       const pos = L.latLng(position.coords.latitude, position.coords.longitude)
+
+      // Mostrar progreso adicional
+      Loading.show()
 
       await getRouteLine()
 
@@ -66,15 +77,27 @@ export default () => {
           location.current = loc
         }
       })
-    } catch (error) {
+
+      Notify.create({ type: 'positive', message: 'Ubicación obtenida correctamente' })
+      return true
+
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    } catch (error: any) {
       console.error('Error getting current location:', error)
-      Notify.create({ type: 'negative', message: 'Error getting current location.' })
+      Notify.create({
+        type: 'negative',
+        message: 'Error obteniendo ubicación',
+        caption: error.message,
+      })
+      return false
+    } finally {
+      setTimeout(() => Loading.hide(), 500)
     }
   }
 
   const getLocations = async () => {
-    const user_id = String(store.auth.current?.id)
-    const { data, error } = await supabase.rpc('get_locations', { user_id })
+    const p_user_id = String(store.auth.current?.id)
+    const { data, error } = await supabase.rpc('get_locations', { p_user_id })
 
     if (error) {
       console.error('Error loading locations:', error)

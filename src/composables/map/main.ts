@@ -44,6 +44,8 @@ export default () => {
       marker.end = newMarker
     }
 
+    verifyStateMap()
+
     if (save) setMapPersisten()
     newMarker.addTo(map.value)
     map.value.closePopup()
@@ -63,6 +65,8 @@ export default () => {
       route.endPos = null
     }
 
+    verifyStateMap()
+
     if (save) setMapPersisten()
   }
 
@@ -76,13 +80,33 @@ export default () => {
     }
   }
 
+  const verifyStateMap = () => {
+    setTimeout(() => {
+      location.data?.forEach((loc) => {
+        if (loc.coordinates.coordinates[0] == route.startPos?.lat) {
+          location.current = loc
+        }
+      })
+
+      route.data?.forEach((rou) => {
+        const endPosLat = rou.end_point.coordinates[1]! == route.endPos?.lat
+        const startPosLat = rou.start_point.coordinates[1]! == route.startPos?.lat
+        if (endPosLat && startPosLat) {
+          route.current = rou
+        }
+      })
+    }, 700)
+  }
+
   const initMap = (name = 'map') => {
+    if (map.value) map.value.remove()
     map.value = L.map(name)
     map.value.setView([10.196805, -71.30903], 14)
     map.value.addLayer(baseLayers.GoogleMaps)
     updateMapLayer(baseLayers.GoogleMaps)
 
     getMapPersisten()
+    verifyStateMap()
     loadPoints()
 
     map.value.on('click', (e) => handleMapClick(e))
@@ -127,6 +151,7 @@ export default () => {
   }
 
   return {
+    verifyStateMap,
     createPoint,
     deletePoint,
     loadPoints,
@@ -134,8 +159,8 @@ export default () => {
     initMap,
     isLocation,
     isStartPos,
-    isRoute,
     isEndPos,
+    isRoute,
     map,
   }
 }

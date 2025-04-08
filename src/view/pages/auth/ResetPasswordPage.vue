@@ -13,6 +13,7 @@
           label="Nueva contraseña"
           type="password"
           :rules="passwordRules"
+           color="yellow-9"
           required
         />
         

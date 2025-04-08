@@ -57,6 +57,12 @@
     border-bottom: 1px solid #333;
     color: white;
   }
+  .q-field--error .q-field__bottom {
+    color: rgb(255, 109, 109) !important;
+  }
+  .text-negative {
+    color: rgb(255, 109, 109) !important;
+  }
 }
 
 .leaflet-popup-close-button {
@@ -66,5 +72,17 @@
   span {
     font-size: 30px;
     border-radius: 50%;
+  }
+}
+
+.mobile-keyboard-fix {
+  min-height: 100vh !important;
+  height: auto !important;
+}
+
+@media (max-height: 600px) {
+  .mobile-keyboard-fix {
+    padding-top: 20px;
+    padding-bottom: 20px;
   }
 }

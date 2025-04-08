@@ -1,11 +1,12 @@
 <template>
-  <q-page class="fixed left-0 top-13 w-full h-screen">
+  <q-page class="fixed left-0 top-13 w-full h-screen mobile-keyboard-fix">
+    <div class="flex justify-center pt-2 w-full">
+      <h2 class="!text-3xl !font-bold mb-2 text-yellow-8">
+        Perfil de {{ store.auth.getRoleAdmin ? 'admin' : 'usuario' }}
+      </h2>
+    </div>
     <q-scroll-area style="height: 90vh; width: 100%" class="pb-10">
-      <div class="flex justify-center p-8 w-full">
-        <h2 class="!text-3xl !font-bold mb-6 text-yellow-8">
-          Perfil de {{ store.auth.getRoleAdmin ? 'admin' : 'usuario' }}
-        </h2>
-
+      <div class="flex justify-center p-8 pb-20  w-full">
         <div class="flex flex-col items-center mb-8 w-full" v-if="!store.auth.getRoleAdmin">
           <q-avatar size="120px" class="mb-4">
             <q-img :src="avatarUrl" referrerpolicy="no-referrer" />
@@ -24,10 +25,24 @@
         <!-- Formulario de perfil -->
         <q-form @submit.prevent="updateProfile" @reset="resetForm" class="space-y-6 w-full">
           <!-- Campos del formulario... -->
-          <q-input v-model="userData.email" label="Email" readonly class="w-full" disable />
+          <q-input
+            v-model="userData.email"
+            label="Email"
+            readonly
+            class="w-full"
+            color="yellow-9"
+            disable
+          />
 
           <!-- Rol (solo lectura) -->
-          <q-input v-model="userData.role" label="Rol" readonly disable class="w-full" />
+          <q-input
+            v-model="userData.role"
+            label="Rol"
+            readonly
+            disable
+            class="w-full"
+            color="yellow-9"
+          />
 
           <!-- Nombre completo -->
           <q-input
@@ -35,15 +50,18 @@
             label="Nombre completo"
             :rules="[(val) => !!val || 'Campo requerido']"
             class="w-full"
+            color="yellow-9"
           />
 
           <!-- Descripción -->
           <q-input
+            v-if="!store.auth.getRoleAdmin"
             v-model="userData.description"
             label="Descripción"
             type="textarea"
             autogrow
             class="w-full"
+            color="yellow-9"
           />
 
           <!-- Cédula -->
@@ -53,31 +71,36 @@
             class="w-full"
             :rules="validationRules"
             maxlength="10"
+            color="yellow-9"
           />
 
           <!-- Número de Teléfono -->
           <q-input
+            v-if="!store.auth.getRoleAdmin"
             v-model="userData.phone"
             label="Número de teléfono"
             mask="04##-###-####"
             unmasked-value
             :rules="[required, phoneNumberVe]"
             class="w-full"
+            color="yellow-9"
           />
 
           <!-- Fecha de Nacimiento -->
           <q-input
+            v-if="!store.auth.getRoleAdmin"
             v-model="userData.birthdate"
             label="Fecha de nacimiento"
             mask="##/##/####"
             :rules="[validateBirthdate]"
             class="w-full"
             hint="DD/MM/AAAA"
+            color="yellow-9"
           >
             <template v-slot:append>
               <q-icon name="event" class="cursor-pointer">
                 <q-popup-proxy cover transition-show="scale" transition-hide="scale">
-                  <q-date v-model="userData.birthdate" mask="DD/MM/YYYY">
+                  <q-date v-model="userData.birthdate" mask="DD/MM/YYYY" color="yellow-9">
                     <div class="row items-center justify-end">
                       <q-btn v-close-popup label="Cerrar" color="primary" flat />
                     </div>
@@ -138,7 +161,6 @@ const userData = ref<InputsI['UpdateI']>({
   phone: '',
 })
 
-
 // Cargar datos iniciales
 const fetchUserData = () => {
   if (!store.auth.current) return
@@ -190,6 +212,7 @@ const handleImageUpload = async (file: File) => {
         updated_at: new Date().toISOString(),
       })
       .eq('id', currentUser.id)
+      .is('deleted_at', null)
 
     if (dbError) throw dbError
 
@@ -242,6 +265,7 @@ const updateProfile = async () => {
           : null, // Add birthdate to update
       })
       .eq('id', currentUser.id)
+      .is('deleted_at', null)
 
     if (error) throw error
 

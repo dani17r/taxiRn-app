@@ -18,6 +18,13 @@ const tabsDefault = [
     viewsHidden: [],
   },
   {
+    name: 'admin-payment',
+    label: 'Pagos',
+    icon: 'payment',
+    views: [UserRoleI.ADMIN],
+    viewsHidden: [UserRoleI.ADMIN],
+  },
+  {
     name: 'my-vehicle',
     label: 'Mi vehiculo',
     icon: 'directions_car',

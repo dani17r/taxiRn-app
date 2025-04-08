@@ -13,6 +13,7 @@
             v-model="email"
             label="Email/Correo"
             class="w-full"
+            color="yellow-9"
             :rules="[required]"
             :readonly="isEditing"
           >
@@ -21,7 +22,7 @@
             </template>
           </q-input>
 
-          <q-input v-model="fullname" label="Nombre completo" class="w-full" :rules="[required]">
+          <q-input v-model="fullname" label="Nombre completo" class="w-full" :rules="[required]"  color="yellow-9">
             <template #append>
               <q-icon name="person" color="yellow-8" />
             </template>
@@ -34,6 +35,7 @@
             v-model="password"
             label="Contraseña"
             class="w-full"
+             color="yellow-9"
             :rules="isEditing ? [] : [required]"
           >
             <template #append>
@@ -45,9 +47,15 @@
               />
             </template>
           </q-input>
-          <q-item-label v-else caption class="text-orange-700">La contraseña no se puede editar desde aquí.</q-item-label>
 
-          <q-input v-model="cedula" label="Cedula" class="w-full" />
+           <q-input
+            v-model="cedula"
+            label="Cédula"
+            color="yellow-9"
+            class="w-full"
+            :rules="validationRules"
+            maxlength="10"
+          />
 
           <div class="mt-0">
             <q-btn
@@ -78,16 +86,17 @@
 </template>
 
 <script setup lang="ts">
-import { required } from '@utils/validations'
-import { ref, watchEffect, computed } from 'vue'
 import { supabase } from '@services/supabase.services'
-
+import { useCedula } from '@composables/useCedula'
+import { ref, watchEffect, computed } from 'vue'
 import superComposable from '@composables/super'
 import notification from '@utils/notification'
 import type { UserI } from '@interfaces/user'
+import { required } from '@utils/validations'
 
 const { store } = superComposable()
-const emit = defineEmits(['admin-created', 'admin-updated'])
+const { cedula, validationRules, resetCedula } = useCedula()
+const emit = defineEmits(['update'])
 
 const props = defineProps<{
   editingAdmin?: UserI | null
@@ -100,7 +109,6 @@ const isEditing = computed(() => !!props.editingAdmin)
 const email = ref('')
 const password = ref('') // Password only used for creation
 const fullname = ref('')
-const cedula = ref('')
 const showPassword = ref(false)
 
 // Watch for changes in editingAdmin prop to update form fields
@@ -114,7 +122,7 @@ watchEffect(() => {
     // Reset form when creating a new admin (dialog opens without editingAdmin)
     email.value = ''
     fullname.value = ''
-    cedula.value = ''
+    resetCedula()
     password.value = ''
   }
 })
@@ -134,7 +142,7 @@ const handleSubmit = async () => {
 
       if (error) throw error
       notification().success({ message: 'Administrador actualizado' })
-      emit('admin-updated') // Emit event for parent component
+      emit('update') // Emit event for parent component
       onReset() // Reset form after successful update
     } else {
       // Create new admin
@@ -151,7 +159,7 @@ const handleSubmit = async () => {
           role: 'admin', // Ensure role is set to admin
         });
       notification().success({ message: 'Administrador registrado' });
-      emit('admin-created') // Emit event for parent component
+      emit('update') // Emit event for parent component
       onReset(); // Reset form after successful creation
     }
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -173,7 +181,7 @@ const onReset = () => {
     // If creating, reset to empty
     email.value = ''
     fullname.value = ''
-    cedula.value = ''
+    resetCedula()
   }
   password.value = '' // Always clear password on reset
 }

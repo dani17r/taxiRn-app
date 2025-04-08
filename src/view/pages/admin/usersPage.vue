@@ -1,5 +1,5 @@
 <template>
-  <q-page class="fixed left-0 top-13 w-full h-screen">
+  <q-page class="fixed left-0 top-13 w-full h-screen mobile-keyboard-fix">
     <h5 class="text-yellow-700 !font-bold w-full text-center">Usuarios</h5>
     <div class="row q-col-gutter-md">
       <div class="col-12 col-sm-6">
@@ -7,6 +7,7 @@
           v-model="searchQuery"
           label="Buscar usuario"
           debounce="500"
+          color="yellow-9"
           dense
           filled
           @update:model-value="handleSearchUpdate"
@@ -34,40 +35,27 @@
                 <q-item-label caption class="!text-[14px]"
                   >creado el: {{ formatCustomDate(String(user.created_at)) }}</q-item-label
                 >
-                 <q-item-label>
-                   <div class="q-mt-sm flex q-gutter-sm"> <!-- Buttons below details -->
-                     <q-btn
-                       dense
-                       flat
-                       round
-                       color="primary"
-                       icon="edit"
-                       @click="editUser(user)"
-                     >
-                       <q-tooltip>Editar</q-tooltip>
-                     </q-btn>
-                     <q-btn
-                       dense
-                       flat
-                       round
-                       :color="user.is_blocked ? 'green' : 'orange'"
-                       :icon="user.is_blocked ? 'lock_open' : 'block'"
-                       @click="user.is_blocked ? unblockUser(user.id) : blockUser(user.id)"
-                     >
-                       <q-tooltip>{{ user.is_blocked ? 'Desbloquear' : 'Bloquear' }}</q-tooltip>
-                     </q-btn>
-                     <q-btn
-                       dense
-                       flat
-                       round
-                       color="red"
-                       icon="delete"
-                       @click="deleteUser(user.id, user.user_id)"
-                     >
+                <q-item-label>
+                  <div class="q-mt-sm flex q-gutter-sm">
+                    <!-- Buttons below details -->
+                    <q-btn dense flat round color="primary" icon="edit" @click="editUser(user)">
+                      <q-tooltip>Editar</q-tooltip>
+                    </q-btn>
+                    <q-btn
+                      dense
+                      flat
+                      round
+                      :color="user.is_blocked ? 'green' : 'orange'"
+                      :icon="user.is_blocked ? 'lock_open' : 'block'"
+                      @click="user.is_blocked ? unblockUser(user.id) : blockUser(user.id)"
+                    >
+                      <q-tooltip>{{ user.is_blocked ? 'Desbloquear' : 'Bloquear' }}</q-tooltip>
+                    </q-btn>
+                    <q-btn dense flat round color="red" icon="delete" @click="deleteUser(user.id)">
                       <q-tooltip>Eliminar</q-tooltip>
-                     </q-btn>
-                   </div>
-                 </q-item-label>
+                    </q-btn>
+                  </div>
+                </q-item-label>
               </q-item-section>
               <!-- Removed the separate side section for buttons -->
             </q-item>
@@ -114,7 +102,7 @@
       @click="newUser()"
     />
 
-    <DialogNewUser
+    <DialogAddOrEditeUser
       v-model="dialogs.newuser.value"
       :editing-user="editingUser"
       @user-created="fetchusers(currentPage, 10).catch(() => {})"
@@ -131,7 +119,9 @@ import { supabase } from '@services/supabase.services'
 import { defineAsyncComponent } from 'vue'
 import type { UserI } from '@interfaces/user'
 
-const DialogNewUser = defineAsyncComponent(() => import('@modules/user/DialogNewUser.vue'))
+const DialogAddOrEditeUser = defineAsyncComponent(
+  () => import('@modules/user/DialogAddOrEditeUser.vue'),
+)
 
 const $q = useQuasar()
 
@@ -152,6 +142,7 @@ async function fetchusers(page: number, itemsPerPage = 10) {
       .from('users')
       .select('*', { count: 'exact' })
       .eq('role', 'user')
+      .is('deleted_at', null)
       .range(from, to)
       .order('created_at', { ascending: false })
 
@@ -177,71 +168,102 @@ async function fetchusers(page: number, itemsPerPage = 10) {
   }
 }
 
-async function deleteUser(userId: string, authId: string) {
-  try {
-    const { error } = await supabase.from('users').delete().eq('id', userId)
-    if (error) throw error
+const deleteUser = (p_user_id: string) => {
+  $q.dialog({
+    title: 'Confirmar eliminación',
+    message: '¿Estás seguro de que deseas eliminar este usuario?',
+    cancel: 'Cancelar',
+    ok: 'Si',
+    persistent: true,
+    color: 'yellow-9',
+    class: '!shadow-none bg-one',
+    // eslint-disable-next-line @typescript-eslint/no-misused-promises
+  }).onOk(async () => {
+    try {
+      const { error } = await supabase.rpc('delete_user', { p_user_id })
+      if (error) throw error
 
-    await supabase.auth.admin.deleteUser(authId)
+      $q.notify({
+        type: 'positive',
+        message: 'Usuario eliminado correctamente',
+      })
 
-    $q.notify({
-      type: 'positive',
-      message: 'Usuario eliminado correctamente',
-    })
-
-    fetchusers(currentPage.value, 10).catch(() => {})
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  } catch (error: any) {
-    $q.notify({
-      type: 'negative',
-      message: 'Error al eliminar usuario',
-      caption: error.message,
-    })
-  }
+      fetchusers(currentPage.value, 10).catch(() => {})
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    } catch (error: any) {
+      $q.notify({
+        type: 'negative',
+        message: 'Error al eliminar usuario',
+        caption: error.message,
+      })
+    }
+  })
 }
 
-async function blockUser(userId: string) {
-  try {
-    const { error } = await supabase.from('users').update({ is_blocked: true }).eq('id', userId)
+const blockUser = (userId: string) => {
+  $q.dialog({
+    title: 'Confirmar Bloqueo',
+    message: '¿Estás seguro de que deseas bloquear este usuario?',
+    cancel: 'Cancelar',
+    ok: 'Si',
+    persistent: true,
+    color: 'yellow-9',
+    class: '!shadow-none bg-one',
+    // eslint-disable-next-line @typescript-eslint/no-misused-promises
+  }).onOk(async () => {
+    try {
+      const { error } = await supabase.from('users').update({ is_blocked: true }).eq('id', userId)
 
-    if (error) throw error
+      if (error) throw error
 
-    $q.notify({
-      type: 'positive',
-      message: 'Usuario bloqueado correctamente',
-    })
+      $q.notify({
+        type: 'positive',
+        message: 'Usuario bloqueado correctamente',
+      })
 
-    fetchusers(currentPage.value, 10).catch(() => {})
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  } catch (error: any) {
-    $q.notify({
-      type: 'negative',
-      message: 'Error al bloquear usuario',
-      caption: error.message,
-    })
-  }
+      fetchusers(currentPage.value, 10).catch(() => {})
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    } catch (error: any) {
+      $q.notify({
+        type: 'negative',
+        message: 'Error al bloquear usuario',
+        caption: error.message,
+      })
+    }
+  })
 }
 
-async function unblockUser(userId: string) {
-  try {
-    const { error } = await supabase.from('users').update({ is_blocked: false }).eq('id', userId)
+const unblockUser = (userId: string) => {
+  $q.dialog({
+    title: 'Confirmar Desbloqueo',
+    message: '¿Estás seguro de que deseas desbloquear este usuario?',
+    cancel: 'Cancelar',
+    ok: 'Si',
+    persistent: true,
+    color: 'yellow-9',
+    class: '!shadow-none bg-one',
+    // eslint-disable-next-line @typescript-eslint/no-misused-promises
+  }).onOk(async () => {
+    try {
+      const { error } = await supabase.from('users').update({ is_blocked: false }).eq('id', userId)
 
-    if (error) throw error
+      if (error) throw error
 
-    $q.notify({
-      type: 'positive',
-      message: 'Usuario desbloqueado correctamente',
-    })
+      $q.notify({
+        type: 'positive',
+        message: 'Usuario desbloqueado correctamente',
+      })
 
-    fetchusers(currentPage.value, 10).catch(() => {})
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  } catch (error: any) {
-    $q.notify({
-      type: 'negative',
-      message: 'Error al desbloquear usuario',
-      caption: error.message,
-    })
-  }
+      fetchusers(currentPage.value, 10).catch(() => {})
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    } catch (error: any) {
+      $q.notify({
+        type: 'negative',
+        message: 'Error al desbloquear usuario',
+        caption: error.message,
+      })
+    }
+  })
 }
 
 const dialogs = reactive({
@@ -252,27 +274,26 @@ const dialogs = reactive({
 })
 
 const editUser = (user: UserI) => {
-  editingUser.value = user;
-  dialogs.newuser.toggle();
+  editingUser.value = user
+  dialogs.newuser.toggle()
 }
 
 const newUser = () => {
-  editingUser.value = null;
-  dialogs.newuser.toggle();
+  editingUser.value = null
+  dialogs.newuser.toggle()
 }
 
 // Function to handle search input update
 const handleSearchUpdate = () => {
-  currentPage.value = 1;
-  fetchusers(currentPage.value, 10).catch(() => {});
-};
+  currentPage.value = 1
+  fetchusers(currentPage.value, 10).catch(() => {})
+}
 
 // Function to handle pagination update
 const handlePaginationUpdate = (newPage: number) => {
   // currentPage is already updated by v-model, just fetch data
-  fetchusers(newPage, 10).catch(() => {});
-};
-
+  fetchusers(newPage, 10).catch(() => {})
+}
 
 onMounted(() => {
   fetchusers(currentPage.value, 10).catch(() => {})
